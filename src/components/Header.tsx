@@ -1,11 +1,14 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Phone, Menu, X } from "lucide-react";
+import { Phone, Menu, X, Shield } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import BookingModal from "./BookingModal";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const { user, isAdmin } = useAuth();
 
   const navLinks = [
     { name: "Home", href: "#home" },
@@ -47,6 +50,21 @@ const Header = () => {
                 <Phone className="w-4 h-4" />
                 <span className="font-medium">(123) 456-7890</span>
               </a>
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="outline" size="default">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
+              {!user && (
+                <Link to="/auth">
+                  <Button variant="ghost" size="default">
+                    Sign In
+                  </Button>
+                </Link>
+              )}
               <Button variant="hero" size="default" onClick={() => setIsBookingOpen(true)}>
                 Book Appointment
               </Button>
@@ -81,6 +99,21 @@ const Header = () => {
                     <Phone className="w-4 h-4" />
                     <span className="font-medium">(123) 456-7890</span>
                   </a>
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" size="lg" className="w-full">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Admin Dashboard
+                      </Button>
+                    </Link>
+                  )}
+                  {!user && (
+                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="ghost" size="lg" className="w-full">
+                        Sign In
+                      </Button>
+                    </Link>
+                  )}
                   <Button variant="hero" size="lg" className="w-full" onClick={() => { setIsBookingOpen(true); setIsMenuOpen(false); }}>
                     Book Appointment
                   </Button>
