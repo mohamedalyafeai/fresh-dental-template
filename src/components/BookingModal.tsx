@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -44,7 +44,45 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const { toast } = useToast();
+
+  // Fetch booked slots when date changes
+  useEffect(() => {
+    const fetchBookedSlots = async () => {
+      if (!selectedDate) {
+        setBookedSlots([]);
+        return;
+      }
+
+      setIsLoadingSlots(true);
+      try {
+        const { data, error } = await supabase
+          .from("appointments")
+          .select("appointment_time")
+          .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
+          .neq("status", "cancelled");
+
+        if (error) throw error;
+
+        const slots = data?.map(apt => apt.appointment_time) || [];
+        setBookedSlots(slots);
+        
+        // If currently selected time is now booked, deselect it
+        if (selectedTime && slots.includes(selectedTime)) {
+          setSelectedTime(null);
+        }
+      } catch (error) {
+        console.error("Error fetching booked slots:", error);
+        setBookedSlots([]);
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+
+    fetchBookedSlots();
+  }, [selectedDate]);
 
   const resetForm = () => {
     setStep(1);
@@ -53,6 +91,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     setSelectedTime(null);
     setFormData({ name: "", email: "", phone: "", notes: "" });
     setIsConfirmed(false);
+    setBookedSlots([]);
   };
 
   const handleClose = () => {
@@ -66,6 +105,35 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     setIsSubmitting(true);
     
     try {
+      // Double-check availability before booking
+      const { data: existingBooking, error: checkError } = await supabase
+        .from("appointments")
+        .select("id")
+        .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
+        .eq("appointment_time", selectedTime)
+        .neq("status", "cancelled")
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingBooking) {
+        toast({
+          title: "Time Slot Unavailable",
+          description: "This time slot was just booked by someone else. Please select a different time.",
+          variant: "destructive",
+        });
+        // Refresh available slots
+        const { data } = await supabase
+          .from("appointments")
+          .select("appointment_time")
+          .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
+          .neq("status", "cancelled");
+        setBookedSlots(data?.map(apt => apt.appointment_time) || []);
+        setSelectedTime(null);
+        setStep(2);
+        return;
+      }
+
       const { error } = await supabase.from("appointments").insert({
         patient_name: formData.name.trim(),
         patient_email: formData.email.trim(),
@@ -100,6 +168,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const canProceedStep3 = formData.name.trim() && formData.email.trim() && formData.phone.trim();
 
   const selectedServiceData = services.find(s => s.id === selectedService);
+  const availableSlots = timeSlots.filter(slot => !bookedSlots.includes(slot));
 
   if (isConfirmed) {
     return (
@@ -245,22 +314,47 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
             <div>
               <h3 className="font-semibold text-lg mb-3">Select Time</h3>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {timeSlots.map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => setSelectedTime(time)}
-                    className={cn(
-                      "py-2 px-3 rounded-lg border text-sm font-medium transition-all",
-                      selectedTime === time
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
+              {isLoadingSlots ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="ml-2 text-muted-foreground">Checking availability...</span>
+                </div>
+              ) : availableSlots.length === 0 && selectedDate ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2 text-destructive" />
+                  <p>No available slots for this date.</p>
+                  <p className="text-sm">Please select a different date.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {timeSlots.map((time) => {
+                    const isBooked = bookedSlots.includes(time);
+                    return (
+                      <button
+                        key={time}
+                        onClick={() => !isBooked && setSelectedTime(time)}
+                        disabled={isBooked}
+                        className={cn(
+                          "py-2 px-3 rounded-lg border text-sm font-medium transition-all",
+                          isBooked
+                            ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through"
+                            : selectedTime === time
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {bookedSlots.length > 0 && availableSlots.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Crossed out times are already booked
+                </p>
+              )}
             </div>
 
             <div className="flex justify-between pt-4">
