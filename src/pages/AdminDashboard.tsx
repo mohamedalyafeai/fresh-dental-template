@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { 
@@ -24,8 +26,18 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  Edit,
+  MoreHorizontal
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Appointment {
   id: string;
@@ -48,6 +60,12 @@ const SERVICES = [
   'Dental Implants',
   'Root Canal',
   'Braces & Orthodontics',
+];
+
+const TIME_SLOTS = [
+  '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM',
+  '4:00 PM', '4:30 PM', '5:00 PM',
 ];
 
 const STATUS_OPTIONS = ['pending', 'confirmed', 'completed', 'cancelled'];
@@ -75,6 +93,18 @@ const AdminDashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedService, setSelectedService] = useState('All Services');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  
+  // Delete state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Reschedule state
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [appointmentToReschedule, setAppointmentToReschedule] = useState<Appointment | null>(null);
+  const [newDate, setNewDate] = useState<Date | undefined>(undefined);
+  const [newTime, setNewTime] = useState<string>('');
+  const [isRescheduling, setIsRescheduling] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -168,6 +198,95 @@ const AdminDashboard = () => {
   const clearFilters = () => {
     setSelectedDate(undefined);
     setSelectedService('All Services');
+  };
+
+  // Delete appointment
+  const handleDeleteClick = (appointment: Appointment) => {
+    setAppointmentToDelete(appointment);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!appointmentToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentToDelete.id);
+
+      if (error) throw error;
+
+      setAppointments(prev => prev.filter(apt => apt.id !== appointmentToDelete.id));
+      
+      toast({
+        title: 'Appointment Deleted',
+        description: `Appointment for ${appointmentToDelete.patient_name} has been deleted.`,
+      });
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete appointment.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setAppointmentToDelete(null);
+    }
+  };
+
+  // Reschedule appointment
+  const handleRescheduleClick = (appointment: Appointment) => {
+    setAppointmentToReschedule(appointment);
+    setNewDate(new Date(appointment.appointment_date));
+    setNewTime(appointment.appointment_time);
+    setRescheduleDialogOpen(true);
+  };
+
+  const confirmReschedule = async () => {
+    if (!appointmentToReschedule || !newDate || !newTime) return;
+    
+    setIsRescheduling(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({
+          appointment_date: format(newDate, 'yyyy-MM-dd'),
+          appointment_time: newTime,
+        })
+        .eq('id', appointmentToReschedule.id);
+
+      if (error) throw error;
+
+      setAppointments(prev =>
+        prev.map(apt =>
+          apt.id === appointmentToReschedule.id
+            ? { ...apt, appointment_date: format(newDate, 'yyyy-MM-dd'), appointment_time: newTime }
+            : apt
+        )
+      );
+      
+      toast({
+        title: 'Appointment Rescheduled',
+        description: `Appointment for ${appointmentToReschedule.patient_name} has been rescheduled to ${format(newDate, 'MMM d, yyyy')} at ${newTime}.`,
+      });
+    } catch (error) {
+      console.error('Error rescheduling appointment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reschedule appointment.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRescheduling(false);
+      setRescheduleDialogOpen(false);
+      setAppointmentToReschedule(null);
+      setNewDate(undefined);
+      setNewTime('');
+    }
   };
 
   // Stats
@@ -390,26 +509,50 @@ const AdminDashboard = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Select
-                            value={appointment.status}
-                            onValueChange={value => updateAppointmentStatus(appointment.id, value)}
-                            disabled={updatingId === appointment.id}
-                          >
-                            <SelectTrigger className="w-[130px]">
-                              {updatingId === appointment.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <SelectValue />
-                              )}
-                            </SelectTrigger>
-                            <SelectContent>
-                              {STATUS_OPTIONS.map(status => (
-                                <SelectItem key={status} value={status}>
-                                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={appointment.status}
+                              onValueChange={value => updateAppointmentStatus(appointment.id, value)}
+                              disabled={updatingId === appointment.id}
+                            >
+                              <SelectTrigger className="w-[120px]">
+                                {updatingId === appointment.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <SelectValue />
+                                )}
+                              </SelectTrigger>
+                              <SelectContent>
+                                {STATUS_OPTIONS.map(status => (
+                                  <SelectItem key={status} value={status}>
+                                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleRescheduleClick(appointment)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Reschedule
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteClick(appointment)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -420,6 +563,112 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the appointment for{' '}
+              <span className="font-medium">{appointmentToDelete?.patient_name}</span>? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reschedule Dialog */}
+      <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reschedule Appointment</DialogTitle>
+            <DialogDescription>
+              Reschedule appointment for{' '}
+              <span className="font-medium">{appointmentToReschedule?.patient_name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>New Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newDate ? format(newDate, 'PPP') : 'Select date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newDate}
+                    onSelect={setNewDate}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>New Time</Label>
+              <Select value={newTime} onValueChange={setNewTime}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIME_SLOTS.map(time => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRescheduleDialogOpen(false)}
+              disabled={isRescheduling}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmReschedule}
+              disabled={isRescheduling || !newDate || !newTime}
+            >
+              {isRescheduling ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
