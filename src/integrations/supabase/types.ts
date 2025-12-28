@@ -24,6 +24,7 @@ export type Database = {
           patient_email: string
           patient_name: string
           patient_phone: string
+          reminder_sent: string | null
           service: string
           status: string
         }
@@ -36,6 +37,7 @@ export type Database = {
           patient_email: string
           patient_name: string
           patient_phone: string
+          reminder_sent?: string | null
           service: string
           status?: string
         }
@@ -48,6 +50,7 @@ export type Database = {
           patient_email?: string
           patient_name?: string
           patient_phone?: string
+          reminder_sent?: string | null
           service?: string
           status?: string
         }
