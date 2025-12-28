@@ -218,11 +218,28 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
+      // Send cancellation notification email
+      try {
+        await supabase.functions.invoke("send-admin-notification", {
+          body: {
+            type: "cancel",
+            patientName: appointmentToDelete.patient_name,
+            patientEmail: appointmentToDelete.patient_email,
+            service: appointmentToDelete.service,
+            originalDate: format(new Date(appointmentToDelete.appointment_date), "MMMM d, yyyy"),
+            originalTime: appointmentToDelete.appointment_time,
+          },
+        });
+        console.log("Cancellation notification sent");
+      } catch (emailError) {
+        console.error("Failed to send cancellation notification:", emailError);
+      }
+
       setAppointments(prev => prev.filter(apt => apt.id !== appointmentToDelete.id));
       
       toast({
         title: 'Appointment Deleted',
-        description: `Appointment for ${appointmentToDelete.patient_name} has been deleted.`,
+        description: `Appointment for ${appointmentToDelete.patient_name} has been deleted and notified.`,
       });
     } catch (error) {
       console.error('Error deleting appointment:', error);
@@ -251,6 +268,9 @@ const AdminDashboard = () => {
     
     setIsRescheduling(true);
     try {
+      const originalDate = format(new Date(appointmentToReschedule.appointment_date), "MMMM d, yyyy");
+      const originalTime = appointmentToReschedule.appointment_time;
+
       const { error } = await supabase
         .from('appointments')
         .update({
@@ -260,6 +280,25 @@ const AdminDashboard = () => {
         .eq('id', appointmentToReschedule.id);
 
       if (error) throw error;
+
+      // Send reschedule notification email
+      try {
+        await supabase.functions.invoke("send-admin-notification", {
+          body: {
+            type: "reschedule",
+            patientName: appointmentToReschedule.patient_name,
+            patientEmail: appointmentToReschedule.patient_email,
+            service: appointmentToReschedule.service,
+            originalDate,
+            originalTime,
+            newDate: format(newDate, "MMMM d, yyyy"),
+            newTime,
+          },
+        });
+        console.log("Reschedule notification sent");
+      } catch (emailError) {
+        console.error("Failed to send reschedule notification:", emailError);
+      }
 
       setAppointments(prev =>
         prev.map(apt =>
@@ -271,7 +310,7 @@ const AdminDashboard = () => {
       
       toast({
         title: 'Appointment Rescheduled',
-        description: `Appointment for ${appointmentToReschedule.patient_name} has been rescheduled to ${format(newDate, 'MMM d, yyyy')} at ${newTime}.`,
+        description: `Appointment for ${appointmentToReschedule.patient_name} has been rescheduled and notified.`,
       });
     } catch (error) {
       console.error('Error rescheduling appointment:', error);
