@@ -146,10 +146,27 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
       if (error) throw error;
 
+      // Send confirmation email
+      try {
+        await supabase.functions.invoke("send-confirmation-email", {
+          body: {
+            patientName: formData.name.trim(),
+            patientEmail: formData.email.trim(),
+            service: selectedServiceData?.name || selectedService,
+            appointmentDate: format(selectedDate, "MMMM d, yyyy"),
+            appointmentTime: selectedTime,
+          },
+        });
+        console.log("Confirmation email sent successfully");
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+        // Don't fail the booking if email fails
+      }
+
       setIsConfirmed(true);
       toast({
         title: "Appointment Booked!",
-        description: "We'll send you a confirmation email shortly.",
+        description: "We've sent you a confirmation email.",
       });
     } catch (error) {
       console.error("Booking error:", error);
