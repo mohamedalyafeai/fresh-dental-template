@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { 
@@ -29,7 +30,9 @@ import {
   ArrowLeft,
   Trash2,
   Edit,
-  MoreHorizontal
+  MoreHorizontal,
+  List,
+  CalendarDays
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -38,6 +41,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { AppointmentCalendar } from '@/components/AppointmentCalendar';
+import '@/styles/calendar.css';
 
 interface Appointment {
   id: string;
@@ -93,6 +98,7 @@ const AdminDashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedService, setSelectedService] = useState('All Services');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
   // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -328,6 +334,65 @@ const AdminDashboard = () => {
     }
   };
 
+  // Calendar reschedule handler
+  const handleCalendarReschedule = async (id: string, newDateStr: string, newTimeStr: string) => {
+    const appointment = appointments.find(apt => apt.id === id);
+    if (!appointment) return;
+
+    try {
+      const originalDate = format(new Date(appointment.appointment_date), "MMMM d, yyyy");
+      const originalTime = appointment.appointment_time;
+
+      const { error } = await supabase
+        .from('appointments')
+        .update({
+          appointment_date: newDateStr,
+          appointment_time: newTimeStr,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Send notification
+      try {
+        await supabase.functions.invoke("send-admin-notification", {
+          body: {
+            type: "reschedule",
+            patientName: appointment.patient_name,
+            patientEmail: appointment.patient_email,
+            service: appointment.service,
+            originalDate,
+            originalTime,
+            newDate: format(new Date(newDateStr), "MMMM d, yyyy"),
+            newTime: newTimeStr,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send notification:", emailError);
+      }
+
+      setAppointments(prev =>
+        prev.map(apt =>
+          apt.id === id
+            ? { ...apt, appointment_date: newDateStr, appointment_time: newTimeStr }
+            : apt
+        )
+      );
+
+      toast({
+        title: 'Appointment Rescheduled',
+        description: `Appointment for ${appointment.patient_name} has been rescheduled.`,
+      });
+    } catch (error) {
+      console.error('Error rescheduling:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reschedule appointment.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Stats
   const totalAppointments = appointments.length;
   const pendingCount = appointments.filter(a => a.status === 'pending').length;
@@ -476,11 +541,37 @@ const AdminDashboard = () => {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
+
+              <div className="flex gap-1 border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('calendar')}
+                >
+                  <CalendarDays className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Calendar View */}
+        {viewMode === 'calendar' && (
+          <AppointmentCalendar
+            appointments={appointments}
+            onReschedule={handleCalendarReschedule}
+          />
+        )}
+
         {/* Appointments Table */}
+        {viewMode === 'list' && (
         <Card>
           <CardHeader>
             <CardTitle>Appointments</CardTitle>
@@ -601,6 +692,7 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
+        )}
       </main>
 
       {/* Delete Confirmation Dialog */}

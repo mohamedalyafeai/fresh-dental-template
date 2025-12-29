@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,9 @@ const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
 const Auth = () => {
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
+  
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,11 +27,16 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const getRedirectPath = () => {
+    if (redirectTo === 'portal') return '/portal';
+    return '/';
+  };
+
   useEffect(() => {
     if (!isLoading && user) {
-      navigate('/');
+      navigate(getRedirectPath());
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, redirectTo]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; fullName?: string } = {};
@@ -80,7 +88,7 @@ const Auth = () => {
             title: 'Welcome back!',
             description: 'You have successfully logged in.',
           });
-          navigate('/');
+          navigate(getRedirectPath());
         }
       } else {
         const { error } = await signUp(email, password, fullName);
@@ -103,7 +111,7 @@ const Auth = () => {
             title: 'Account Created!',
             description: 'Welcome to Radiant Smile Dental.',
           });
-          navigate('/');
+          navigate(getRedirectPath());
         }
       }
     } catch {
@@ -138,7 +146,7 @@ const Auth = () => {
             </CardTitle>
             <CardDescription className="mt-2">
               {isLogin 
-                ? 'Sign in to access the admin dashboard' 
+                ? (redirectTo === 'portal' ? 'Sign in to view your appointments' : 'Sign in to access the dashboard')
                 : 'Sign up to get started with Radiant Smile'}
             </CardDescription>
           </div>

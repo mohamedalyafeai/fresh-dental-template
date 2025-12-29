@@ -1,0 +1,467 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface Appointment {
+  id: string;
+  patient_name: string;
+  patient_email: string;
+  patient_phone: string;
+  service: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  notes: string | null;
+  created_at: string;
+}
+
+const TIME_SLOTS = [
+  '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM'
+];
+
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case 'confirmed': return 'default';
+    case 'completed': return 'secondary';
+    case 'cancelled': return 'destructive';
+    default: return 'outline';
+  }
+};
+
+const PatientPortal = () => {
+  const { user, isLoading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Reschedule state
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [appointmentToReschedule, setAppointmentToReschedule] = useState<Appointment | null>(null);
+  const [newDate, setNewDate] = useState<Date | undefined>();
+  const [newTime, setNewTime] = useState('');
+  const [isRescheduling, setIsRescheduling] = useState(false);
+
+  // Cancel state
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth?redirect=portal');
+    }
+  }, [user, authLoading, navigate]);
+
+  const fetchAppointments = async () => {
+    if (!user?.email) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('patient_email', user.email)
+        .order('appointment_date', { ascending: true })
+        .order('appointment_time', { ascending: true });
+
+      if (error) throw error;
+      setAppointments(data || []);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load your appointments.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchAppointments();
+    }
+  }, [user?.email]);
+
+  const handleRescheduleClick = (appointment: Appointment) => {
+    setAppointmentToReschedule(appointment);
+    setNewDate(new Date(appointment.appointment_date));
+    setNewTime(appointment.appointment_time);
+    setRescheduleDialogOpen(true);
+  };
+
+  const confirmReschedule = async () => {
+    if (!appointmentToReschedule || !newDate || !newTime) return;
+
+    setIsRescheduling(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({
+          appointment_date: format(newDate, 'yyyy-MM-dd'),
+          appointment_time: newTime,
+        })
+        .eq('id', appointmentToReschedule.id);
+
+      if (error) throw error;
+
+      // Send notification
+      try {
+        await supabase.functions.invoke('send-admin-notification', {
+          body: {
+            type: 'reschedule',
+            patientName: appointmentToReschedule.patient_name,
+            patientEmail: appointmentToReschedule.patient_email,
+            service: appointmentToReschedule.service,
+            originalDate: format(new Date(appointmentToReschedule.appointment_date), 'MMMM d, yyyy'),
+            originalTime: appointmentToReschedule.appointment_time,
+            newDate: format(newDate, 'MMMM d, yyyy'),
+            newTime,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send notification:', emailError);
+      }
+
+      await fetchAppointments();
+      toast({
+        title: 'Appointment Rescheduled',
+        description: `Your appointment has been rescheduled to ${format(newDate, 'MMM d, yyyy')} at ${newTime}.`,
+      });
+    } catch (error) {
+      console.error('Error rescheduling:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reschedule appointment.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRescheduling(false);
+      setRescheduleDialogOpen(false);
+      setAppointmentToReschedule(null);
+    }
+  };
+
+  const handleCancelClick = (appointment: Appointment) => {
+    setAppointmentToCancel(appointment);
+    setCancelDialogOpen(true);
+  };
+
+  const confirmCancel = async () => {
+    if (!appointmentToCancel) return;
+
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: 'cancelled' })
+        .eq('id', appointmentToCancel.id);
+
+      if (error) throw error;
+
+      // Send notification
+      try {
+        await supabase.functions.invoke('send-admin-notification', {
+          body: {
+            type: 'cancel',
+            patientName: appointmentToCancel.patient_name,
+            patientEmail: appointmentToCancel.patient_email,
+            service: appointmentToCancel.service,
+            originalDate: format(new Date(appointmentToCancel.appointment_date), 'MMMM d, yyyy'),
+            originalTime: appointmentToCancel.appointment_time,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send notification:', emailError);
+      }
+
+      await fetchAppointments();
+      toast({
+        title: 'Appointment Cancelled',
+        description: 'Your appointment has been cancelled.',
+      });
+    } catch (error) {
+      console.error('Error cancelling:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to cancel appointment.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCancelling(false);
+      setCancelDialogOpen(false);
+      setAppointmentToCancel(null);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const upcomingAppointments = appointments.filter(
+    apt => apt.status !== 'cancelled' && apt.status !== 'completed' && new Date(apt.appointment_date) >= new Date()
+  );
+  const pastAppointments = appointments.filter(
+    apt => apt.status === 'completed' || new Date(apt.appointment_date) < new Date()
+  );
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center">
+                <Smile className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">My Appointments</h1>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+              </div>
+            </div>
+          </div>
+          <Button variant="outline" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : appointments.length === 0 ? (
+          <Card className="max-w-lg mx-auto">
+            <CardContent className="text-center py-12">
+              <CalendarIcon2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h2 className="text-xl font-semibold mb-2">No Appointments Yet</h2>
+              <p className="text-muted-foreground mb-6">Book your first appointment with us!</p>
+              <Button variant="hero" onClick={() => navigate('/')}>
+                Book Now
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-8">
+            {/* Upcoming Appointments */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Upcoming Appointments ({upcomingAppointments.length})
+              </h2>
+              {upcomingAppointments.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No upcoming appointments
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4">
+                  {upcomingAppointments.map(appointment => (
+                    <Card key={appointment.id}>
+                      <CardContent className="p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-semibold text-lg">{appointment.service}</h3>
+                              <Badge variant={getStatusBadgeVariant(appointment.status)}>
+                                {appointment.status}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <CalendarIcon className="h-4 w-4" />
+                                {format(new Date(appointment.appointment_date), 'MMMM d, yyyy')}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" />
+                                {appointment.appointment_time}
+                              </span>
+                            </div>
+                            {appointment.notes && (
+                              <p className="text-sm text-muted-foreground">{appointment.notes}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRescheduleClick(appointment)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Reschedule
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleCancelClick(appointment)}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Past Appointments */}
+            {pastAppointments.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4 text-muted-foreground">
+                  Past Appointments ({pastAppointments.length})
+                </h2>
+                <div className="grid gap-4 opacity-70">
+                  {pastAppointments.slice(0, 5).map(appointment => (
+                    <Card key={appointment.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">{appointment.service}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(appointment.appointment_date), 'MMMM d, yyyy')} at {appointment.appointment_time}
+                            </p>
+                          </div>
+                          <Badge variant={getStatusBadgeVariant(appointment.status)}>
+                            {appointment.status}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Reschedule Dialog */}
+      <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reschedule Appointment</DialogTitle>
+            <DialogDescription>Select a new date and time for your appointment</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">New Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start", !newDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newDate ? format(newDate, 'MMMM d, yyyy') : 'Select date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newDate}
+                    onSelect={setNewDate}
+                    disabled={(date) => date < new Date() || date.getDay() === 0}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">New Time</label>
+              <Select value={newTime} onValueChange={setNewTime}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIME_SLOTS.map(slot => (
+                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-muted rounded-lg p-3 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                Please reschedule at least 24 hours in advance to avoid any fees.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>Cancel</Button>
+            <Button variant="hero" onClick={confirmReschedule} disabled={isRescheduling || !newDate || !newTime}>
+              {isRescheduling ? 'Rescheduling...' : 'Confirm Reschedule'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Appointment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel your {appointmentToCancel?.service} appointment on{' '}
+              {appointmentToCancel && format(new Date(appointmentToCancel.appointment_date), 'MMMM d, yyyy')} at{' '}
+              {appointmentToCancel?.appointment_time}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Appointment</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancel}
+              disabled={isCancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isCancelling ? 'Cancelling...' : 'Yes, Cancel'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default PatientPortal;
