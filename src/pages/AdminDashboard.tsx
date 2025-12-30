@@ -22,7 +22,7 @@ import {
   Filter, 
   LogOut, 
   RefreshCw, 
-  Smile,
+  Sparkles,
   Users,
   Clock,
   CheckCircle,
@@ -32,7 +32,10 @@ import {
   Edit,
   MoreHorizontal,
   List,
-  CalendarDays
+  CalendarDays,
+  ListPlus,
+  Phone,
+  Mail
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -54,6 +57,18 @@ interface Appointment {
   appointment_time: string;
   status: string;
   notes: string | null;
+  created_at: string;
+}
+
+interface WaitlistEntry {
+  id: string;
+  patient_name: string;
+  patient_email: string;
+  patient_phone: string;
+  service: string;
+  preferred_date: string;
+  notes: string | null;
+  status: string;
   created_at: string;
 }
 
@@ -94,11 +109,14 @@ const AdminDashboard = () => {
   const { toast } = useToast();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingWaitlist, setIsLoadingWaitlist] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedService, setSelectedService] = useState('All Services');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [activeTab, setActiveTab] = useState('appointments');
   
   // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -115,7 +133,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
-        navigate('/auth');
+        navigate('/auth?role=doctor');
       } else if (!isAdmin) {
         toast({
           title: 'Access Denied',
@@ -160,9 +178,28 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchWaitlist = async () => {
+    setIsLoadingWaitlist(true);
+    try {
+      const { data, error } = await supabase
+        .from('waiting_list')
+        .select('*')
+        .eq('status', 'waiting')
+        .order('preferred_date', { ascending: true });
+
+      if (error) throw error;
+      setWaitlist(data || []);
+    } catch (error) {
+      console.error('Error fetching waitlist:', error);
+    } finally {
+      setIsLoadingWaitlist(false);
+    }
+  };
+
   useEffect(() => {
     if (user && isAdmin) {
       fetchAppointments();
+      fetchWaitlist();
     }
   }, [user, isAdmin, selectedDate, selectedService]);
 
@@ -196,6 +233,30 @@ const AdminDashboard = () => {
     }
   };
 
+  const removeFromWaitlist = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('waiting_list')
+        .update({ status: 'removed' })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setWaitlist(prev => prev.filter(w => w.id !== id));
+      toast({
+        title: 'Removed from Waitlist',
+        description: 'Entry has been removed from the waiting list.',
+      });
+    } catch (error) {
+      console.error('Error removing from waitlist:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove from waitlist.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -224,7 +285,6 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Send cancellation notification email
       try {
         await supabase.functions.invoke("send-admin-notification", {
           body: {
@@ -236,7 +296,6 @@ const AdminDashboard = () => {
             originalTime: appointmentToDelete.appointment_time,
           },
         });
-        console.log("Cancellation notification sent");
       } catch (emailError) {
         console.error("Failed to send cancellation notification:", emailError);
       }
@@ -287,7 +346,6 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Send reschedule notification email
       try {
         await supabase.functions.invoke("send-admin-notification", {
           body: {
@@ -301,7 +359,6 @@ const AdminDashboard = () => {
             newTime,
           },
         });
-        console.log("Reschedule notification sent");
       } catch (emailError) {
         console.error("Failed to send reschedule notification:", emailError);
       }
@@ -334,7 +391,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Calendar reschedule handler
   const handleCalendarReschedule = async (id: string, newDateStr: string, newTimeStr: string) => {
     const appointment = appointments.find(apt => apt.id === id);
     if (!appointment) return;
@@ -353,7 +409,6 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Send notification
       try {
         await supabase.functions.invoke("send-admin-notification", {
           body: {
@@ -398,6 +453,7 @@ const AdminDashboard = () => {
   const pendingCount = appointments.filter(a => a.status === 'pending').length;
   const confirmedCount = appointments.filter(a => a.status === 'confirmed').length;
   const completedCount = appointments.filter(a => a.status === 'completed').length;
+  const waitlistCount = waitlist.length;
 
   if (authLoading) {
     return (
@@ -412,25 +468,25 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="rounded-xl">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center">
-                <Smile className="h-5 w-5 text-primary-foreground" />
+              <div className="w-12 h-12 hero-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25">
+                <Sparkles className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">Admin Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Manage appointments</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Admin Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Manage appointments & waitlist</p>
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
+          <Button variant="outline" onClick={handleSignOut} className="rounded-xl">
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
@@ -439,265 +495,378 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{totalAppointments}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Total</p>
+                  <p className="text-3xl font-bold">{totalAppointments}</p>
                 </div>
-                <Users className="h-8 w-8 text-primary opacity-80" />
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold">{pendingCount}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Pending</p>
+                  <p className="text-3xl font-bold">{pendingCount}</p>
                 </div>
-                <Clock className="h-8 w-8 text-yellow-500 opacity-80" />
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-amber-500" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Confirmed</p>
-                  <p className="text-2xl font-bold">{confirmedCount}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Confirmed</p>
+                  <p className="text-3xl font-bold">{confirmedCount}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500 opacity-80" />
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-emerald-500" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Completed</p>
-                  <p className="text-2xl font-bold">{completedCount}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Completed</p>
+                  <p className="text-3xl font-bold">{completedCount}</p>
                 </div>
-                <XCircle className="h-8 w-8 text-muted-foreground opacity-80" />
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
+                  <XCircle className="h-6 w-6 text-muted-foreground" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Waitlist</p>
+                  <p className="text-3xl font-bold">{waitlistCount}</p>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center">
+                  <ListPlus className="h-6 w-6 text-orange-500" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters
-            </CardTitle>
-            <CardDescription>Filter appointments by date and service type</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="space-y-2">
-                <Label>Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[200px] justify-start">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, 'PPP') : 'All dates'}
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-card/80 backdrop-blur-sm border shadow-sm p-1 rounded-2xl">
+            <TabsTrigger value="appointments" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              Appointments
+            </TabsTrigger>
+            <TabsTrigger value="waitlist" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              Waiting List {waitlistCount > 0 && <Badge variant="secondary" className="ml-2">{waitlistCount}</Badge>}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="appointments" className="space-y-6">
+            {/* Filters */}
+            <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-primary" />
+                  Filters
+                </CardTitle>
+                <CardDescription>Filter appointments by date and service type</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-[200px] justify-start rounded-xl">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {selectedDate ? format(selectedDate, 'PPP') : 'All dates'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Service</Label>
+                    <Select value={selectedService} onValueChange={setSelectedService}>
+                      <SelectTrigger className="w-[200px] rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SERVICES.map(service => (
+                          <SelectItem key={service} value={service}>
+                            {service}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button variant="outline" onClick={clearFilters} className="rounded-xl">
+                    Clear Filters
+                  </Button>
+
+                  <Button variant="outline" onClick={fetchAppointments} className="rounded-xl">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+
+                  <div className="flex gap-1 border rounded-xl p-1 bg-muted/50">
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                      className="rounded-lg"
+                    >
+                      <List className="h-4 w-4" />
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+                    <Button
+                      variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('calendar')}
+                      className="rounded-lg"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className="space-y-2">
-                <Label>Service</Label>
-                <Select value={selectedService} onValueChange={setSelectedService}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SERVICES.map(service => (
-                      <SelectItem key={service} value={service}>
-                        {service}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button variant="outline" onClick={clearFilters}>
-                Clear Filters
-              </Button>
-
-              <Button variant="outline" onClick={fetchAppointments}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-
-              <div className="flex gap-1 border rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'calendar' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('calendar')}
-                >
-                  <CalendarDays className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Calendar View */}
-        {viewMode === 'calendar' && (
-          <AppointmentCalendar
-            appointments={appointments}
-            onReschedule={handleCalendarReschedule}
-          />
-        )}
-
-        {/* Appointments Table */}
-        {viewMode === 'list' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Appointments</CardTitle>
-            <CardDescription>
-              {isLoading ? 'Loading...' : `${appointments.length} appointment(s) found`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : appointments.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No appointments found</p>
-                <p className="text-sm">Try adjusting your filters</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Patient</TableHead>
-                      <TableHead>Service</TableHead>
-                      <TableHead>Date & Time</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {appointments.map(appointment => (
-                      <TableRow key={appointment.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{appointment.patient_name}</p>
-                            {appointment.notes && (
-                              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                                {appointment.notes}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{appointment.service}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">
-                              {format(new Date(appointment.appointment_date), 'MMM d, yyyy')}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {appointment.appointment_time}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <p>{appointment.patient_email}</p>
-                            <p className="text-muted-foreground">{appointment.patient_phone}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(appointment.status)}>
-                            {appointment.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Select
-                              value={appointment.status}
-                              onValueChange={value => updateAppointmentStatus(appointment.id, value)}
-                              disabled={updatingId === appointment.id}
-                            >
-                              <SelectTrigger className="w-[120px]">
-                                {updatingId === appointment.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <SelectValue />
-                                )}
-                              </SelectTrigger>
-                              <SelectContent>
-                                {STATUS_OPTIONS.map(status => (
-                                  <SelectItem key={status} value={status}>
-                                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleRescheduleClick(appointment)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Reschedule
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeleteClick(appointment)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+            {/* Calendar View */}
+            {viewMode === 'calendar' && (
+              <AppointmentCalendar
+                appointments={appointments}
+                onReschedule={handleCalendarReschedule}
+              />
             )}
-          </CardContent>
-        </Card>
-        )}
+
+            {/* Appointments Table */}
+            {viewMode === 'list' && (
+              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>Appointments</CardTitle>
+                  <CardDescription>
+                    {isLoading ? 'Loading...' : `${appointments.length} appointment(s) found`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : appointments.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No appointments found</p>
+                      <p className="text-sm">Try adjusting your filters</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Patient</TableHead>
+                            <TableHead>Service</TableHead>
+                            <TableHead>Date & Time</TableHead>
+                            <TableHead>Contact</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {appointments.map(appointment => (
+                            <TableRow key={appointment.id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{appointment.patient_name}</p>
+                                  {appointment.notes && (
+                                    <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                      {appointment.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>{appointment.service}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">
+                                    {format(new Date(appointment.appointment_date), 'MMM d, yyyy')}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {appointment.appointment_time}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  <p>{appointment.patient_email}</p>
+                                  <p className="text-muted-foreground">{appointment.patient_phone}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={getStatusBadgeVariant(appointment.status)}>
+                                  {appointment.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Select
+                                    value={appointment.status}
+                                    onValueChange={value => updateAppointmentStatus(appointment.id, value)}
+                                    disabled={updatingId === appointment.id}
+                                  >
+                                    <SelectTrigger className="w-[120px] rounded-lg">
+                                      {updatingId === appointment.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <SelectValue />
+                                      )}
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {STATUS_OPTIONS.map(status => (
+                                        <SelectItem key={status} value={status}>
+                                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleRescheduleClick(appointment)}>
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Reschedule
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        onClick={() => handleDeleteClick(appointment)}
+                                        className="text-destructive focus:text-destructive"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="waitlist">
+            <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ListPlus className="h-5 w-5 text-orange-500" />
+                      Waiting List
+                    </CardTitle>
+                    <CardDescription>
+                      Patients waiting for available slots
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={fetchWaitlist} className="rounded-xl">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingWaitlist ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : waitlist.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <ListPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No one on the waiting list</p>
+                    <p className="text-sm">Patients will appear here when all slots are booked</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {waitlist.map(entry => (
+                      <div key={entry.id} className="flex items-center justify-between p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center">
+                            <Users className="h-6 w-6 text-orange-500" />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{entry.patient_name}</p>
+                            <p className="text-sm text-muted-foreground">{entry.service}</p>
+                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <CalendarIcon className="h-3 w-3" />
+                                {format(new Date(entry.preferred_date), 'MMM d, yyyy')}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {entry.patient_email}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {entry.patient_phone}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="rounded-lg"
+                            onClick={() => removeFromWaitlist(entry.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
             <AlertDialogDescription>
@@ -707,11 +876,11 @@ const AdminDashboard = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting} className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
             >
               {isDeleting ? (
                 <>
@@ -728,7 +897,7 @@ const AdminDashboard = () => {
 
       {/* Reschedule Dialog */}
       <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle>Reschedule Appointment</DialogTitle>
             <DialogDescription>
@@ -739,10 +908,10 @@ const AdminDashboard = () => {
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>New Date</Label>
+              <Label className="text-sm font-medium">New Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start rounded-xl">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {newDate ? format(newDate, 'PPP') : 'Select date'}
                   </Button>
@@ -760,9 +929,9 @@ const AdminDashboard = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>New Time</Label>
+              <Label className="text-sm font-medium">New Time</Label>
               <Select value={newTime} onValueChange={setNewTime}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="Select time" />
                 </SelectTrigger>
                 <SelectContent>
@@ -781,12 +950,14 @@ const AdminDashboard = () => {
               variant="outline"
               onClick={() => setRescheduleDialogOpen(false)}
               disabled={isRescheduling}
+              className="rounded-xl"
             >
               Cancel
             </Button>
             <Button
               onClick={confirmReschedule}
               disabled={isRescheduling || !newDate || !newTime}
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity rounded-xl"
             >
               {isRescheduling ? (
                 <>

@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Smile, Loader2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Stethoscope, Heart, Sparkles } from 'lucide-react';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -15,7 +16,9 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect');
+  const defaultRole = searchParams.get('role') || 'patient';
   
+  const [activeRole, setActiveRole] = useState<'patient' | 'doctor'>(defaultRole as 'patient' | 'doctor');
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,20 +26,27 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
   
-  const { signIn, signUp, user, isLoading } = useAuth();
+  const { signIn, signUp, user, isLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const getRedirectPath = () => {
     if (redirectTo === 'portal') return '/portal';
-    return '/';
+    if (redirectTo === 'admin') return '/admin';
+    if (activeRole === 'doctor') return '/admin';
+    return '/portal';
   };
 
   useEffect(() => {
     if (!isLoading && user) {
-      navigate(getRedirectPath());
+      // If user is admin and trying to access admin, allow it
+      if (isAdmin && (redirectTo === 'admin' || activeRole === 'doctor')) {
+        navigate('/admin');
+      } else {
+        navigate('/portal');
+      }
     }
-  }, [user, isLoading, navigate, redirectTo]);
+  }, [user, isLoading, navigate, redirectTo, isAdmin, activeRole]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; fullName?: string } = {};
@@ -88,7 +98,6 @@ const Auth = () => {
             title: 'Welcome back!',
             description: 'You have successfully logged in.',
           });
-          navigate(getRedirectPath());
         }
       } else {
         const { error } = await signUp(email, password, fullName);
@@ -109,9 +118,8 @@ const Auth = () => {
         } else {
           toast({
             title: 'Account Created!',
-            description: 'Welcome to Radiant Smile Dental.',
+            description: 'Welcome to BrightSmile Dental.',
           });
-          navigate(getRedirectPath());
         }
       }
     } catch {
@@ -134,38 +142,56 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/30 to-background p-4">
-      <Card className="w-full max-w-md card-shadow">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 hero-gradient rounded-2xl flex items-center justify-center">
-            <Smile className="h-8 w-8 text-primary-foreground" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4 relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-accent/20 to-transparent rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+      
+      <Card className="w-full max-w-md relative z-10 border-0 shadow-2xl bg-card/80 backdrop-blur-xl">
+        <CardHeader className="text-center space-y-4 pb-2">
+          <div className="mx-auto w-20 h-20 hero-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 animate-fade-in">
+            <Sparkles className="h-10 w-10 text-primary-foreground" />
           </div>
-          <div>
-            <CardTitle className="text-2xl font-bold">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              BrightSmile Dental
             </CardTitle>
-            <CardDescription className="mt-2">
-              {isLogin 
-                ? (redirectTo === 'portal' ? 'Sign in to view your appointments' : 'Sign in to access the dashboard')
-                : 'Sign up to get started with Radiant Smile'}
+            <CardDescription className="text-muted-foreground">
+              {isLogin ? 'Sign in to your account' : 'Create a new account'}
             </CardDescription>
           </div>
         </CardHeader>
         
+        {/* Role Tabs */}
+        <div className="px-6 pt-2">
+          <Tabs value={activeRole} onValueChange={(v) => setActiveRole(v as 'patient' | 'doctor')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+              <TabsTrigger value="patient" className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Heart className="h-4 w-4" />
+                Patient
+              </TabsTrigger>
+              <TabsTrigger value="doctor" className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Stethoscope className="h-4 w-4" />
+                Doctor
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName" className="text-sm font-medium">Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="fullName"
                     type="text"
-                    placeholder="Dr. John Smith"
+                    placeholder={activeRole === 'doctor' ? "Dr. John Smith" : "John Smith"}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary"
                     disabled={isSubmitting}
                   />
                 </div>
@@ -176,7 +202,7 @@ const Auth = () => {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -185,7 +211,7 @@ const Auth = () => {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary"
                   disabled={isSubmitting}
                 />
               </div>
@@ -195,7 +221,7 @@ const Auth = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -204,7 +230,7 @@ const Auth = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary"
                   disabled={isSubmitting}
                 />
               </div>
@@ -214,10 +240,10 @@ const Auth = () => {
             </div>
           </CardContent>
           
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 pt-2">
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-lg shadow-primary/25" 
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -230,10 +256,19 @@ const Auth = () => {
               )}
             </Button>
             
+            <div className="relative w-full">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-muted-foreground/20"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">or</span>
+              </div>
+            </div>
+            
             <Button
               type="button"
               variant="ghost"
-              className="w-full"
+              className="w-full text-muted-foreground hover:text-foreground"
               onClick={() => {
                 setIsLogin(!isLogin);
                 setErrors({});
@@ -243,6 +278,15 @@ const Auth = () => {
               {isLogin 
                 ? "Don't have an account? Sign up" 
                 : 'Already have an account? Sign in'}
+            </Button>
+            
+            <Button
+              type="button"
+              variant="link"
+              className="text-sm text-muted-foreground hover:text-primary"
+              onClick={() => navigate('/')}
+            >
+              ← Back to home
             </Button>
           </CardFooter>
         </form>
