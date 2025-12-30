@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Phone, Menu, X, Shield } from "lucide-react";
+import { Phone, Menu, X, Shield, User, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import BookingModal from "./BookingModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
 
   const navLinks = [
     { name: "Home", href: "#home" },
@@ -20,15 +27,17 @@ const Header = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <a href="#home" className="flex items-center gap-2">
-              <div className="w-10 h-10 hero-gradient rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">B</span>
+            <a href="#home" className="flex items-center gap-3 group">
+              <div className="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/30 transition-shadow">
+                <Sparkles className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-semibold text-foreground">BrightSmile</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                BrightSmile
+              </span>
             </a>
 
             {/* Desktop Navigation */}
@@ -37,7 +46,7 @@ const Header = () => {
                 <a
                   key={link.name}
                   href={link.href}
-                  className="text-muted-foreground hover:text-primary transition-colors duration-200 font-medium"
+                  className="text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full"
                 >
                   {link.name}
                 </a>
@@ -45,34 +54,65 @@ const Header = () => {
             </nav>
 
             {/* Desktop CTA */}
-            <div className="hidden md:flex items-center gap-4">
-              <a href="tel:+1234567890" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+            <div className="hidden md:flex items-center gap-3">
+              <a href="tel:+1234567890" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-muted/50">
                 <Phone className="w-4 h-4" />
                 <span className="font-medium">(123) 456-7890</span>
               </a>
-              {isAdmin && (
-                <Link to="/admin">
-                  <Button variant="outline" size="default">
-                    <Shield className="w-4 h-4 mr-2" />
-                    Admin
-                  </Button>
-                </Link>
-              )}
-              {!user && (
-                <Link to="/auth">
-                  <Button variant="ghost" size="default">
+              
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="default" className="gap-2">
+                      <User className="w-4 h-4" />
+                      Account
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                            <Shield className="w-4 h-4" />
+                            Admin Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/portal" className="flex items-center gap-2 cursor-pointer">
+                        <User className="w-4 h-4" />
+                        My Appointments
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut()} className="text-destructive cursor-pointer">
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link to="/auth?role=patient">
+                  <Button variant="outline" size="default" className="gap-2">
+                    <User className="w-4 h-4" />
                     Sign In
                   </Button>
                 </Link>
               )}
-              <Button variant="hero" size="default" onClick={() => setIsBookingOpen(true)}>
+              
+              <Button 
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-lg shadow-primary/25 font-semibold" 
+                size="default" 
+                onClick={() => setIsBookingOpen(true)}
+              >
                 Book Appointment
               </Button>
             </div>
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 text-foreground"
+              className="md:hidden p-2 text-foreground rounded-lg hover:bg-muted/50 transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -82,39 +122,58 @@ const Header = () => {
 
           {/* Mobile Navigation */}
           {isMenuOpen && (
-            <div className="md:hidden py-4 border-t border-border animate-fade-in">
-              <nav className="flex flex-col gap-4">
+            <div className="md:hidden py-4 border-t border-border/50 animate-fade-in">
+              <nav className="flex flex-col gap-2">
                 {navLinks.map((link) => (
                   <a
                     key={link.name}
                     href={link.href}
-                    className="text-muted-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-200 font-medium py-3 px-2 rounded-lg hover:bg-muted/50"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {link.name}
                   </a>
                 ))}
-                <div className="pt-4 flex flex-col gap-3">
-                  <a href="tel:+1234567890" className="flex items-center gap-2 text-muted-foreground">
+                <div className="pt-4 flex flex-col gap-3 border-t border-border/50 mt-2">
+                  <a href="tel:+1234567890" className="flex items-center gap-2 text-muted-foreground py-2">
                     <Phone className="w-4 h-4" />
                     <span className="font-medium">(123) 456-7890</span>
                   </a>
-                  {isAdmin && (
-                    <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" size="lg" className="w-full">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Admin Dashboard
+                  
+                  {user ? (
+                    <>
+                      {isAdmin && (
+                        <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" size="lg" className="w-full gap-2">
+                            <Shield className="w-4 h-4" />
+                            Admin Dashboard
+                          </Button>
+                        </Link>
+                      )}
+                      <Link to="/portal" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="lg" className="w-full gap-2">
+                          <User className="w-4 h-4" />
+                          My Appointments
+                        </Button>
+                      </Link>
+                      <Button variant="ghost" size="lg" className="w-full text-destructive" onClick={() => signOut()}>
+                        Sign Out
                       </Button>
-                    </Link>
-                  )}
-                  {!user && (
-                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="ghost" size="lg" className="w-full">
+                    </>
+                  ) : (
+                    <Link to="/auth?role=patient" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" size="lg" className="w-full gap-2">
+                        <User className="w-4 h-4" />
                         Sign In
                       </Button>
                     </Link>
                   )}
-                  <Button variant="hero" size="lg" className="w-full" onClick={() => { setIsBookingOpen(true); setIsMenuOpen(false); }}>
+                  
+                  <Button 
+                    className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-lg shadow-primary/25 font-semibold" 
+                    size="lg" 
+                    onClick={() => { setIsBookingOpen(true); setIsMenuOpen(false); }}
+                  >
                     Book Appointment
                   </Button>
                 </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2, ListPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,12 +13,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const services = [
-  { id: "general", name: "General Dentistry", duration: "30 min" },
-  { id: "whitening", name: "Teeth Whitening", duration: "60 min" },
-  { id: "rootcanal", name: "Root Canal Therapy", duration: "90 min" },
-  { id: "emergency", name: "Emergency Care", duration: "45 min" },
-  { id: "crowns", name: "Dental Crowns", duration: "60 min" },
-  { id: "cosmetic", name: "Cosmetic Dentistry", duration: "45 min" },
+  { id: "general", name: "General Dentistry", duration: "30 min", icon: "🦷" },
+  { id: "whitening", name: "Teeth Whitening", duration: "60 min", icon: "✨" },
+  { id: "rootcanal", name: "Root Canal Therapy", duration: "90 min", icon: "🔧" },
+  { id: "emergency", name: "Emergency Care", duration: "45 min", icon: "🚨" },
+  { id: "crowns", name: "Dental Crowns", duration: "60 min", icon: "👑" },
+  { id: "cosmetic", name: "Cosmetic Dentistry", duration: "45 min", icon: "💎" },
 ];
 
 const timeSlots = [
@@ -44,6 +44,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isWaitlistConfirmed, setIsWaitlistConfirmed] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const { toast } = useToast();
@@ -69,7 +70,6 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
         const slots = data?.map(apt => apt.appointment_time) || [];
         setBookedSlots(slots);
         
-        // If currently selected time is now booked, deselect it
         if (selectedTime && slots.includes(selectedTime)) {
           setSelectedTime(null);
         }
@@ -91,6 +91,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     setSelectedTime(null);
     setFormData({ name: "", email: "", phone: "", notes: "" });
     setIsConfirmed(false);
+    setIsWaitlistConfirmed(false);
     setBookedSlots([]);
   };
 
@@ -99,13 +100,46 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     onClose();
   };
 
+  const handleJoinWaitlist = async () => {
+    if (!selectedService || !selectedDate) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase.from("waiting_list").insert({
+        patient_name: formData.name.trim(),
+        patient_email: formData.email.trim(),
+        patient_phone: formData.phone.trim(),
+        service: selectedService,
+        preferred_date: format(selectedDate, "yyyy-MM-dd"),
+        notes: formData.notes.trim() || null,
+      });
+
+      if (error) throw error;
+
+      setIsWaitlistConfirmed(true);
+      toast({
+        title: "Added to Waiting List!",
+        description: "We'll contact you if a slot becomes available.",
+      });
+    } catch (error) {
+      console.error("Waitlist error:", error);
+      toast({
+        title: "Failed to Join Waiting List",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selectedService || !selectedDate || !selectedTime) return;
     
     setIsSubmitting(true);
     
     try {
-      // Double-check availability before booking
       const { data: existingBooking, error: checkError } = await supabase
         .from("appointments")
         .select("id")
@@ -122,7 +156,6 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
           description: "This time slot was just booked by someone else. Please select a different time.",
           variant: "destructive",
         });
-        // Refresh available slots
         const { data } = await supabase
           .from("appointments")
           .select("appointment_time")
@@ -146,7 +179,6 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
       if (error) throw error;
 
-      // Send confirmation email
       try {
         await supabase.functions.invoke("send-confirmation-email", {
           body: {
@@ -157,10 +189,8 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
             appointmentTime: selectedTime,
           },
         });
-        console.log("Confirmation email sent successfully");
       } catch (emailError) {
         console.error("Failed to send confirmation email:", emailError);
-        // Don't fail the booking if email fails
       }
 
       setIsConfirmed(true);
@@ -186,20 +216,62 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
   const selectedServiceData = services.find(s => s.id === selectedService);
   const availableSlots = timeSlots.filter(slot => !bookedSlots.includes(slot));
+  const allSlotsBooked = selectedDate && !isLoadingSlots && availableSlots.length === 0;
+
+  // Waitlist confirmation screen
+  if (isWaitlistConfirmed) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-lg">
+          <div className="text-center py-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-500/25">
+              <ListPlus className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Added to Waiting List!</h2>
+            <p className="text-muted-foreground mb-6">
+              We'll notify you when a slot becomes available.
+            </p>
+            <div className="bg-muted/50 rounded-2xl p-6 text-left mb-6">
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Service:</span>
+                  <span className="font-medium text-foreground">{selectedServiceData?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Preferred Date:</span>
+                  <span className="font-medium text-foreground">{selectedDate && format(selectedDate, "MMMM d, yyyy")}</span>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              We'll contact you at {formData.email} when a slot opens up.
+            </p>
+            <Button 
+              size="lg" 
+              onClick={handleClose}
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
+            >
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (isConfirmed) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-lg">
           <div className="text-center py-8">
-            <div className="w-20 h-20 hero-gradient rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 hero-gradient rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/25 animate-scale-in">
               <Check className="w-10 h-10 text-primary-foreground" />
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Appointment Confirmed!</h2>
             <p className="text-muted-foreground mb-6">
               Thank you for booking with BrightSmile Dental.
             </p>
-            <div className="bg-muted rounded-xl p-6 text-left mb-6">
+            <div className="bg-muted/50 rounded-2xl p-6 text-left mb-6">
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Service:</span>
@@ -218,7 +290,11 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
             <p className="text-sm text-muted-foreground mb-6">
               A confirmation email has been sent to {formData.email}
             </p>
-            <Button variant="hero" size="lg" onClick={handleClose}>
+            <Button 
+              size="lg" 
+              onClick={handleClose}
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
+            >
               Done
             </Button>
           </div>
@@ -231,7 +307,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Book an Appointment</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Book an Appointment</DialogTitle>
           <DialogDescription>
             Schedule your visit in just a few steps
           </DialogDescription>
@@ -243,18 +319,18 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
             <div key={s} className="flex items-center gap-2">
               <div
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                  "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all",
                   step >= s
-                    ? "hero-gradient text-primary-foreground"
+                    ? "hero-gradient text-primary-foreground shadow-lg shadow-primary/25"
                     : "bg-muted text-muted-foreground"
                 )}
               >
-                {s}
+                {step > s ? <Check className="w-5 h-5" /> : s}
               </div>
               {s < 3 && (
                 <div
                   className={cn(
-                    "w-12 h-1 rounded-full",
+                    "w-16 h-1 rounded-full transition-all",
                     step > s ? "hero-gradient" : "bg-muted"
                   )}
                 />
@@ -273,22 +349,27 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   key={service.id}
                   onClick={() => setSelectedService(service.id)}
                   className={cn(
-                    "p-4 rounded-xl border-2 text-left transition-all",
+                    "p-4 rounded-2xl border-2 text-left transition-all group hover:border-primary/50",
                     selectedService === service.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                      ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                      : "border-border hover:bg-muted/50"
                   )}
                 >
-                  <p className="font-medium text-foreground">{service.name}</p>
-                  <p className="text-sm text-muted-foreground">{service.duration}</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{service.icon}</span>
+                    <div>
+                      <p className="font-semibold text-foreground">{service.name}</p>
+                      <p className="text-sm text-muted-foreground">{service.duration}</p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
             <div className="flex justify-end pt-4">
               <Button
-                variant="hero"
                 onClick={() => setStep(2)}
                 disabled={!canProceedStep1}
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
               >
                 Continue
               </Button>
@@ -306,7 +387,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal h-12",
+                      "w-full justify-start text-left font-normal h-12 rounded-xl",
                       !selectedDate && "text-muted-foreground"
                     )}
                   >
@@ -336,11 +417,19 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   <span className="ml-2 text-muted-foreground">Checking availability...</span>
                 </div>
-              ) : availableSlots.length === 0 && selectedDate ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2 text-destructive" />
-                  <p>No available slots for this date.</p>
-                  <p className="text-sm">Please select a different date.</p>
+              ) : allSlotsBooked ? (
+                <div className="text-center py-8 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-800">
+                  <AlertCircle className="h-10 w-10 mx-auto mb-3 text-amber-500" />
+                  <p className="font-semibold text-foreground mb-1">No available slots for this date</p>
+                  <p className="text-sm text-muted-foreground mb-4">All time slots are booked. You can join the waiting list or select a different date.</p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(3)}
+                    className="border-amber-500 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-950"
+                  >
+                    <ListPlus className="w-4 h-4 mr-2" />
+                    Join Waiting List
+                  </Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -352,12 +441,12 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                         onClick={() => !isBooked && setSelectedTime(time)}
                         disabled={isBooked}
                         className={cn(
-                          "py-2 px-3 rounded-lg border text-sm font-medium transition-all",
+                          "py-3 px-3 rounded-xl border text-sm font-medium transition-all",
                           isBooked
-                            ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through"
+                            ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through opacity-50"
                             : selectedTime === time
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary/50"
+                            ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                            : "border-border hover:border-primary/50 hover:bg-muted/50"
                         )}
                       >
                         {time}
@@ -367,7 +456,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                 </div>
               )}
               {bookedSlots.length > 0 && availableSlots.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   Crossed out times are already booked
                 </p>
@@ -375,15 +464,15 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
             </div>
 
             <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={() => setStep(1)}>
+              <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">
                 Back
               </Button>
               <Button
-                variant="hero"
                 onClick={() => setStep(3)}
-                disabled={!canProceedStep2}
+                disabled={!allSlotsBooked && !canProceedStep2}
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
               >
-                Continue
+                {allSlotsBooked ? "Continue to Waitlist" : "Continue"}
               </Button>
             </div>
           </div>
@@ -392,24 +481,36 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
         {/* Step 3: Patient Information */}
         {step === 3 && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Your Information</h3>
+            <h3 className="font-semibold text-lg">
+              {allSlotsBooked ? "Join Waiting List" : "Your Information"}
+            </h3>
+            
+            {allSlotsBooked && (
+              <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  You're joining the waiting list for {selectedDate && format(selectedDate, "MMMM d, yyyy")}. 
+                  We'll contact you if a slot becomes available.
+                </p>
+              </div>
+            )}
             
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name" className="flex items-center gap-2 mb-2">
-                  <User className="w-4 h-4" /> Full Name
+                <Label htmlFor="name" className="flex items-center gap-2 mb-2 font-medium">
+                  <User className="w-4 h-4 text-primary" /> Full Name
                 </Label>
                 <Input
                   id="name"
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="h-12 rounded-xl"
                 />
               </div>
 
               <div>
-                <Label htmlFor="email" className="flex items-center gap-2 mb-2">
-                  <Mail className="w-4 h-4" /> Email Address
+                <Label htmlFor="email" className="flex items-center gap-2 mb-2 font-medium">
+                  <Mail className="w-4 h-4 text-primary" /> Email Address
                 </Label>
                 <Input
                   id="email"
@@ -417,12 +518,13 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="h-12 rounded-xl"
                 />
               </div>
 
               <div>
-                <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
-                  <Phone className="w-4 h-4" /> Phone Number
+                <Label htmlFor="phone" className="flex items-center gap-2 mb-2 font-medium">
+                  <Phone className="w-4 h-4 text-primary" /> Phone Number
                 </Label>
                 <Input
                   id="phone"
@@ -430,12 +532,13 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   placeholder="(123) 456-7890"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="h-12 rounded-xl"
                 />
               </div>
 
               <div>
-                <Label htmlFor="notes" className="flex items-center gap-2 mb-2">
-                  <FileText className="w-4 h-4" /> Additional Notes (Optional)
+                <Label htmlFor="notes" className="flex items-center gap-2 mb-2 font-medium">
+                  <FileText className="w-4 h-4 text-primary" /> Additional Notes (Optional)
                 </Label>
                 <Textarea
                   id="notes"
@@ -443,14 +546,17 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
+                  className="rounded-xl"
                 />
               </div>
             </div>
 
             {/* Summary */}
-            <div className="bg-muted rounded-xl p-4 mt-6">
-              <h4 className="font-medium text-foreground mb-2">Appointment Summary</h4>
-              <div className="space-y-1 text-sm">
+            <div className="bg-muted/50 rounded-2xl p-5 mt-6">
+              <h4 className="font-semibold text-foreground mb-3">
+                {allSlotsBooked ? "Waiting List Request" : "Appointment Summary"}
+              </h4>
+              <div className="space-y-2 text-sm">
                 <p className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-primary" />
                   <span className="text-muted-foreground">Service:</span>
@@ -458,27 +564,36 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                 </p>
                 <p className="flex items-center gap-2">
                   <CalendarIcon className="w-4 h-4 text-primary" />
-                  <span className="text-muted-foreground">Date:</span>
+                  <span className="text-muted-foreground">{allSlotsBooked ? "Preferred Date:" : "Date:"}</span>
                   <span className="font-medium">{selectedDate && format(selectedDate, "MMMM d, yyyy")}</span>
                 </p>
-                <p className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary" />
-                  <span className="text-muted-foreground">Time:</span>
-                  <span className="font-medium">{selectedTime}</span>
-                </p>
+                {!allSlotsBooked && selectedTime && (
+                  <p className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <span className="text-muted-foreground">Time:</span>
+                    <span className="font-medium">{selectedTime}</span>
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={() => setStep(2)}>
+              <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl">
                 Back
               </Button>
               <Button
-                variant="hero"
-                onClick={handleSubmit}
+                onClick={allSlotsBooked ? handleJoinWaitlist : handleSubmit}
                 disabled={!canProceedStep3 || isSubmitting}
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
               >
-                {isSubmitting ? "Booking..." : "Confirm Booking"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {allSlotsBooked ? "Joining..." : "Booking..."}
+                  </>
+                ) : (
+                  allSlotsBooked ? "Join Waiting List" : "Confirm Booking"
+                )}
               </Button>
             </div>
           </div>

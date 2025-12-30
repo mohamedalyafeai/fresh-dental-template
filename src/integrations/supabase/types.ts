@@ -104,6 +104,48 @@ export type Database = {
         }
         Relationships: []
       }
+      waiting_list: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          patient_email: string
+          patient_name: string
+          patient_phone: string
+          preferred_date: string
+          service: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_email: string
+          patient_name: string
+          patient_phone: string
+          preferred_date: string
+          service: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_email?: string
+          patient_name?: string
+          patient_phone?: string
+          preferred_date?: string
+          service?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
