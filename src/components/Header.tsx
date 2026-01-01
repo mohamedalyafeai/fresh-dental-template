@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Phone, Menu, X, Shield, User, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import BookingModal from "./BookingModal";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +56,8 @@ const Header = () => {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
+              <ThemeToggle />
+              
               <a href="tel:+1234567890" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-muted/50">
                 <Phone className="w-4 h-4" />
                 <span className="font-medium">(123) 456-7890</span>
@@ -135,6 +138,11 @@ const Header = () => {
                   </a>
                 ))}
                 <div className="pt-4 flex flex-col gap-3 border-t border-border/50 mt-2">
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground font-medium">Theme</span>
+                    <ThemeToggle />
+                  </div>
+                  
                   <a href="tel:+1234567890" className="flex items-center gap-2 text-muted-foreground py-2">
                     <Phone className="w-4 h-4" />
                     <span className="font-medium">(123) 456-7890</span>

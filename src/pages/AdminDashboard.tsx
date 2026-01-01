@@ -35,7 +35,8 @@ import {
   CalendarDays,
   ListPlus,
   Phone,
-  Mail
+  Mail,
+  Send
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -129,6 +130,7 @@ const AdminDashboard = () => {
   const [newDate, setNewDate] = useState<Date | undefined>(undefined);
   const [newTime, setNewTime] = useState<string>('');
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [isNotifyingWaitlist, setIsNotifyingWaitlist] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -254,6 +256,54 @@ const AdminDashboard = () => {
         description: 'Failed to remove from waitlist.',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Notify waitlist patients for a specific date
+  const notifyWaitlistPatients = async (preferredDate: string) => {
+    setIsNotifyingWaitlist(true);
+    try {
+      // Get booked slots for this date
+      const { data: bookedAppointments } = await supabase
+        .from('appointments')
+        .select('appointment_time')
+        .eq('appointment_date', preferredDate)
+        .neq('status', 'cancelled');
+
+      const bookedTimes = bookedAppointments?.map(a => a.appointment_time) || [];
+      const availableSlots = TIME_SLOTS.filter(slot => !bookedTimes.includes(slot));
+
+      if (availableSlots.length === 0) {
+        toast({
+          title: 'No Available Slots',
+          description: 'There are no available slots for this date.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('notify-waitlist', {
+        body: { date: preferredDate, availableSlots }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Notifications Sent!',
+        description: `${data.totalNotified} patient(s) have been notified about available slots.`,
+      });
+
+      // Refresh the waitlist
+      fetchWaitlist();
+    } catch (error) {
+      console.error('Error notifying waitlist:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to notify waitlist patients.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsNotifyingWaitlist(false);
     }
   };
 
@@ -844,6 +894,20 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button 
+                            variant="default"
+                            size="sm"
+                            className="rounded-lg bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                            onClick={() => notifyWaitlistPatients(entry.preferred_date)}
+                            disabled={isNotifyingWaitlist}
+                          >
+                            {isNotifyingWaitlist ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Send className="h-4 w-4 mr-1" />
+                            )}
+                            Notify
+                          </Button>
                           <Button 
                             variant="outline" 
                             size="sm"
