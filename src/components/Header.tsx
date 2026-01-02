@@ -22,8 +22,6 @@ const Header = () => {
     { name: "Home", href: "#home" },
     { name: "About", href: "#about" },
     { name: "Services", href: "#services" },
-    { name: "Testimonials", href: "#testimonials" },
-    { name: "Contact", href: "#contact" },
   ];
 
   return (
@@ -58,9 +56,9 @@ const Header = () => {
             <div className="hidden md:flex items-center gap-3">
               <ThemeToggle />
               
-              <a href="tel:+1234567890" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-muted/50">
+              <a href="tel:+12345678900" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-muted/50">
                 <Phone className="w-4 h-4" />
-                <span className="font-medium">(123) 456-7890</span>
+                <span className="font-medium">+1 (234) 567-8900</span>
               </a>
               
               {user ? (
@@ -143,9 +141,9 @@ const Header = () => {
                     <ThemeToggle />
                   </div>
                   
-                  <a href="tel:+1234567890" className="flex items-center gap-2 text-muted-foreground py-2">
+                  <a href="tel:+12345678900" className="flex items-center gap-2 text-muted-foreground py-2">
                     <Phone className="w-4 h-4" />
-                    <span className="font-medium">(123) 456-7890</span>
+                    <span className="font-medium">+1 (234) 567-8900</span>
                   </a>
                   
                   {user ? (
