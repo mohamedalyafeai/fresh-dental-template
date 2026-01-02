@@ -41,7 +41,13 @@ import {
   Settings,
   BarChart3,
   DollarSign,
-  Activity
+  Activity,
+  UserCircle,
+  History,
+  FileText,
+  Search,
+  ChevronRight,
+  Eye
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -76,6 +82,15 @@ interface WaitlistEntry {
   notes: string | null;
   status: string;
   created_at: string;
+}
+
+interface Patient {
+  email: string;
+  name: string;
+  phone: string;
+  totalVisits: number;
+  lastVisit: string | null;
+  appointments: Appointment[];
 }
 
 const SERVICES = [
@@ -123,6 +138,12 @@ const AdminDashboard = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [activeTab, setActiveTab] = useState('appointments');
+  
+  // Patient history state
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [patientHistoryDialogOpen, setPatientHistoryDialogOpen] = useState(false);
   
   // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -202,6 +223,37 @@ const AdminDashboard = () => {
       setIsLoadingWaitlist(false);
     }
   };
+
+  // Process patients from appointments
+  useEffect(() => {
+    if (appointments.length > 0) {
+      const patientMap = new Map<string, Patient>();
+      
+      appointments.forEach(apt => {
+        const existing = patientMap.get(apt.patient_email);
+        if (existing) {
+          existing.appointments.push(apt);
+          existing.totalVisits++;
+          if (!existing.lastVisit || apt.appointment_date > existing.lastVisit) {
+            existing.lastVisit = apt.appointment_date;
+          }
+        } else {
+          patientMap.set(apt.patient_email, {
+            email: apt.patient_email,
+            name: apt.patient_name,
+            phone: apt.patient_phone,
+            totalVisits: 1,
+            lastVisit: apt.appointment_date,
+            appointments: [apt],
+          });
+        }
+      });
+      
+      setPatients(Array.from(patientMap.values()).sort((a, b) => 
+        (b.lastVisit || '').localeCompare(a.lastVisit || '')
+      ));
+    }
+  }, [appointments]);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -620,9 +672,13 @@ const AdminDashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-card/80 backdrop-blur-sm border shadow-sm p-1 rounded-2xl">
+          <TabsList className="bg-card/80 backdrop-blur-sm border shadow-sm p-1 rounded-2xl flex-wrap">
             <TabsTrigger value="appointments" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
               Appointments
+            </TabsTrigger>
+            <TabsTrigger value="patients" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <UserCircle className="h-4 w-4 mr-2" />
+              Patients
             </TabsTrigger>
             <TabsTrigger value="waitlist" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
               Waiting List {waitlistCount > 0 && <Badge variant="secondary" className="ml-2">{waitlistCount}</Badge>}
@@ -847,6 +903,99 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Patients Tab */}
+          <TabsContent value="patients" className="space-y-6">
+            <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <UserCircle className="h-5 w-5 text-primary" />
+                      Patient Records
+                    </CardTitle>
+                    <CardDescription>
+                      View patient history and appointment records
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search patients..."
+                        value={patientSearchQuery}
+                        onChange={(e) => setPatientSearchQuery(e.target.value)}
+                        className="pl-9 w-[250px] rounded-xl"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {patients.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <UserCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No patient records found</p>
+                    <p className="text-sm">Patient records will appear once appointments are booked</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {patients
+                      .filter(patient => 
+                        patient.name.toLowerCase().includes(patientSearchQuery.toLowerCase()) ||
+                        patient.email.toLowerCase().includes(patientSearchQuery.toLowerCase()) ||
+                        patient.phone.includes(patientSearchQuery)
+                      )
+                      .map(patient => (
+                        <div 
+                          key={patient.email} 
+                          className="flex items-center justify-between p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer group"
+                          onClick={() => {
+                            setSelectedPatient(patient);
+                            setPatientHistoryDialogOpen(true);
+                          }}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                              <UserCircle className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-semibold">{patient.name}</p>
+                              <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {patient.email}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {patient.phone}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="rounded-lg">
+                                  <History className="h-3 w-3 mr-1" />
+                                  {patient.totalVisits} visit{patient.totalVisits !== 1 ? 's' : ''}
+                                </Badge>
+                              </div>
+                              {patient.lastVisit && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Last: {format(new Date(patient.lastVisit), 'MMM d, yyyy')}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="waitlist">
@@ -1239,6 +1388,129 @@ const AdminDashboard = () => {
               ) : (
                 'Save Changes'
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Patient History Dialog */}
+      <Dialog open={patientHistoryDialogOpen} onOpenChange={setPatientHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-2xl rounded-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCircle className="h-5 w-5 text-primary" />
+              Patient History
+            </DialogTitle>
+            <DialogDescription>
+              Complete appointment history for {selectedPatient?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedPatient && (
+            <div className="space-y-6 py-4">
+              {/* Patient Info */}
+              <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/50">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <UserCircle className="h-8 w-8 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{selectedPatient.name}</h3>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-4 w-4" />
+                      {selectedPatient.email}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-4 w-4" />
+                      {selectedPatient.phone}
+                    </span>
+                  </div>
+                </div>
+                <Badge className="rounded-lg bg-gradient-to-r from-primary to-accent text-primary-foreground">
+                  {selectedPatient.totalVisits} Total Visits
+                </Badge>
+              </div>
+
+              {/* Appointment History */}
+              <div className="space-y-3">
+                <h4 className="font-medium flex items-center gap-2">
+                  <History className="h-4 w-4 text-primary" />
+                  Appointment History
+                </h4>
+                <div className="space-y-2">
+                  {selectedPatient.appointments
+                    .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date))
+                    .map(apt => (
+                      <div 
+                        key={apt.id} 
+                        className="flex items-center justify-between p-4 rounded-xl border bg-card hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            apt.status === 'completed' ? 'bg-emerald-500/10' :
+                            apt.status === 'confirmed' ? 'bg-primary/10' :
+                            apt.status === 'cancelled' ? 'bg-destructive/10' :
+                            'bg-amber-500/10'
+                          }`}>
+                            {apt.status === 'completed' ? <CheckCircle className="h-5 w-5 text-emerald-500" /> :
+                             apt.status === 'confirmed' ? <CalendarDays className="h-5 w-5 text-primary" /> :
+                             apt.status === 'cancelled' ? <XCircle className="h-5 w-5 text-destructive" /> :
+                             <Clock className="h-5 w-5 text-amber-500" />}
+                          </div>
+                          <div>
+                            <p className="font-medium">{apt.service}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(apt.appointment_date), 'MMMM d, yyyy')} at {apt.appointment_time}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={getStatusBadgeVariant(apt.status)}>
+                            {apt.status}
+                          </Badge>
+                          {apt.notes && (
+                            <p className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate">
+                              <FileText className="h-3 w-3 inline mr-1" />
+                              {apt.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-4 rounded-xl bg-emerald-500/10 text-center">
+                  <p className="text-2xl font-bold text-emerald-600">
+                    {selectedPatient.appointments.filter(a => a.status === 'completed').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </div>
+                <div className="p-4 rounded-xl bg-primary/10 text-center">
+                  <p className="text-2xl font-bold text-primary">
+                    {selectedPatient.appointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Upcoming</p>
+                </div>
+                <div className="p-4 rounded-xl bg-destructive/10 text-center">
+                  <p className="text-2xl font-bold text-destructive">
+                    {selectedPatient.appointments.filter(a => a.status === 'cancelled').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Cancelled</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPatientHistoryDialogOpen(false)}
+              className="rounded-xl"
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
