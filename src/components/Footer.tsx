@@ -74,9 +74,9 @@ const Footer = () => {
             <div>
               <h3 className="font-semibold text-lg mb-6">Quick Links</h3>
               <ul className="space-y-4">
-                {["Home", "About Us", "Services", "Testimonials", "Contact"].map((link) => (
+                {["Home", "About Us", "Services", "Book Now"].map((link) => (
                   <li key={link}>
-                    <a href={`#${link.toLowerCase().replace(" ", "")}`} className="text-background/60 hover:text-background transition-colors">
+                    <a href={link === "Book Now" ? "#" : `#${link.toLowerCase().replace(" ", "")}`} className="text-background/60 hover:text-background transition-colors">
                       {link}
                     </a>
                   </li>
@@ -112,8 +112,8 @@ const Footer = () => {
                 </li>
                 <li className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-accent flex-shrink-0" />
-                  <a href="tel:+1234567890" className="text-background/60 hover:text-background transition-colors">
-                    (123) 456-7890
+                  <a href="tel:+12345678900" className="text-background/60 hover:text-background transition-colors">
+                    +1 (234) 567-8900
                   </a>
                 </li>
                 <li className="flex items-center gap-3">

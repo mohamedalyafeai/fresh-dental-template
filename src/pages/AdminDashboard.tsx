@@ -36,7 +36,12 @@ import {
   ListPlus,
   Phone,
   Mail,
-  Send
+  Send,
+  TrendingUp,
+  Settings,
+  BarChart3,
+  DollarSign,
+  Activity
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -622,6 +627,14 @@ const AdminDashboard = () => {
             <TabsTrigger value="waitlist" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
               Waiting List {waitlistCount > 0 && <Badge variant="secondary" className="ml-2">{waitlistCount}</Badge>}
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="appointments" className="space-y-6">
@@ -924,6 +937,201 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Revenue Overview */}
+              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-emerald-500" />
+                    Revenue Overview
+                  </CardTitle>
+                  <CardDescription>Estimated revenue based on appointments</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-emerald-500/5">
+                      <div>
+                        <p className="text-sm text-muted-foreground">This Month</p>
+                        <p className="text-3xl font-bold">${(completedCount * 150).toLocaleString()}</p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-emerald-500" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-muted/50">
+                        <p className="text-sm text-muted-foreground">Avg. per Visit</p>
+                        <p className="text-xl font-semibold">$150</p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-muted/50">
+                        <p className="text-sm text-muted-foreground">Potential</p>
+                        <p className="text-xl font-semibold">${((confirmedCount + pendingCount) * 150).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Appointment Breakdown */}
+              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-primary" />
+                    Appointment Breakdown
+                  </CardTitle>
+                  <CardDescription>Status distribution of all appointments</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'Completed', count: completedCount, color: 'bg-emerald-500', percentage: totalAppointments ? Math.round((completedCount / totalAppointments) * 100) : 0 },
+                      { label: 'Confirmed', count: confirmedCount, color: 'bg-primary', percentage: totalAppointments ? Math.round((confirmedCount / totalAppointments) * 100) : 0 },
+                      { label: 'Pending', count: pendingCount, color: 'bg-amber-500', percentage: totalAppointments ? Math.round((pendingCount / totalAppointments) * 100) : 0 },
+                      { label: 'Cancelled', count: appointments.filter(a => a.status === 'cancelled').length, color: 'bg-destructive', percentage: totalAppointments ? Math.round((appointments.filter(a => a.status === 'cancelled').length / totalAppointments) * 100) : 0 },
+                    ].map(item => (
+                      <div key={item.label} className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>{item.label}</span>
+                          <span className="font-medium">{item.count} ({item.percentage}%)</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div 
+                            className={`h-full ${item.color} transition-all duration-500`}
+                            style={{ width: `${item.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Popular Services */}
+              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-accent" />
+                    Popular Services
+                  </CardTitle>
+                  <CardDescription>Most booked services this period</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {SERVICES.filter(s => s !== 'All Services').map(service => {
+                      const count = appointments.filter(a => a.service === service).length;
+                      return (
+                        <div key={service} className="p-4 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-colors text-center">
+                          <p className="text-2xl font-bold text-primary">{count}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{service}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-primary" />
+                    Clinic Settings
+                  </CardTitle>
+                  <CardDescription>Manage your clinic preferences</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Clinic Name</Label>
+                    <Input defaultValue="BrightSmile Dental" className="rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Phone Number</Label>
+                    <Input defaultValue="+1 (234) 567-8900" className="rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input defaultValue="info@brightsmile.com" className="rounded-xl" />
+                  </div>
+                  <Button className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                    Save Changes
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-primary" />
+                    Working Hours
+                  </CardTitle>
+                  <CardDescription>Configure appointment availability</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Opens At</Label>
+                      <Input defaultValue="9:00 AM" className="rounded-xl" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Closes At</Label>
+                      <Input defaultValue="5:00 PM" className="rounded-xl" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Appointment Duration (minutes)</Label>
+                    <Input type="number" defaultValue="30" className="rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Max Appointments per Day</Label>
+                    <Input type="number" defaultValue="15" className="rounded-xl" />
+                  </div>
+                  <Button className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                    Update Schedule
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-primary" />
+                    Notification Settings
+                  </CardTitle>
+                  <CardDescription>Configure email and SMS reminders</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-medium">Confirmation Emails</p>
+                        <Badge variant="default">Active</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">Send email when appointment is booked</p>
+                    </div>
+                    <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-medium">SMS Reminders</p>
+                        <Badge variant="default">Active</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">Send SMS 24 hours before appointment</p>
+                    </div>
+                    <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-medium">Waitlist Notifications</p>
+                        <Badge variant="default">Active</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">Notify patients when slots open</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </main>
