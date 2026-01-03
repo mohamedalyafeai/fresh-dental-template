@@ -51,7 +51,9 @@ import {
   Printer,
   Plus,
   StickyNote,
-  MessageSquare
+  MessageSquare,
+  Download,
+  FileDown
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import PrintablePatientReport from '@/components/PrintablePatientReport';
@@ -365,6 +367,241 @@ const AdminDashboard = () => {
       window.print();
       setShowPrintView(false);
     }, 100);
+  };
+
+  // Export patient data to CSV
+  const exportPatientToCSV = (patient: Patient) => {
+    const headers = ['Date', 'Time', 'Service', 'Status', 'Notes'];
+    const rows = patient.appointments.map(apt => [
+      apt.appointment_date,
+      apt.appointment_time,
+      apt.service,
+      apt.status,
+      apt.notes?.replace(/,/g, ';') || ''
+    ]);
+    
+    const csvContent = [
+      `Patient Report - ${patient.name}`,
+      `Email: ${patient.email}`,
+      `Phone: ${patient.phone}`,
+      `Total Visits: ${patient.totalVisits}`,
+      '',
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${patient.name.replace(/\s+/g, '_')}_patient_report.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    toast({
+      title: 'CSV Exported',
+      description: `Patient report for ${patient.name} has been downloaded.`,
+    });
+  };
+
+  // Export all patients to CSV
+  const exportAllPatientsToCSV = () => {
+    const headers = ['Patient Name', 'Email', 'Phone', 'Total Visits', 'Last Visit', 'Completed', 'Upcoming', 'Cancelled'];
+    const rows = patients.map(patient => [
+      patient.name,
+      patient.email,
+      patient.phone,
+      patient.totalVisits.toString(),
+      patient.lastVisit || 'N/A',
+      patient.appointments.filter(a => a.status === 'completed').length.toString(),
+      patient.appointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length.toString(),
+      patient.appointments.filter(a => a.status === 'cancelled').length.toString()
+    ]);
+    
+    const csvContent = [
+      `All Patients Report - Generated on ${format(new Date(), 'MMMM d, yyyy')}`,
+      '',
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `all_patients_report_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    toast({
+      title: 'CSV Exported',
+      description: `All ${patients.length} patient records have been exported.`,
+    });
+  };
+
+  // Export all appointments to CSV
+  const exportAllAppointmentsToCSV = () => {
+    const headers = ['Patient Name', 'Email', 'Phone', 'Service', 'Date', 'Time', 'Status', 'Notes', 'Created At'];
+    const rows = appointments.map(apt => [
+      apt.patient_name,
+      apt.patient_email,
+      apt.patient_phone,
+      apt.service,
+      apt.appointment_date,
+      apt.appointment_time,
+      apt.status,
+      apt.notes?.replace(/,/g, ';') || '',
+      format(new Date(apt.created_at), 'yyyy-MM-dd HH:mm')
+    ]);
+    
+    const csvContent = [
+      `Appointments Report - Generated on ${format(new Date(), 'MMMM d, yyyy')}`,
+      selectedDate ? `Filtered by Date: ${format(selectedDate, 'MMMM d, yyyy')}` : '',
+      selectedService !== 'All Services' ? `Filtered by Service: ${selectedService}` : '',
+      '',
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].filter(line => line !== '').join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `appointments_report_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    toast({
+      title: 'CSV Exported',
+      description: `${appointments.length} appointments have been exported.`,
+    });
+  };
+
+  // Generate and download PDF report for patient
+  const exportPatientToPDF = (patient: Patient) => {
+    const completedCount = patient.appointments.filter(a => a.status === 'completed').length;
+    const upcomingCount = patient.appointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length;
+    const cancelledCount = patient.appointments.filter(a => a.status === 'cancelled').length;
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Patient Report - ${patient.name}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #0891b2; }
+          .logo { font-size: 24px; font-weight: bold; color: #0891b2; }
+          .subtitle { color: #666; margin-top: 5px; }
+          .patient-info { background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+          .patient-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+          .patient-contact { color: #666; font-size: 14px; }
+          .stats { display: flex; gap: 20px; margin-bottom: 20px; }
+          .stat-box { flex: 1; padding: 15px; text-align: center; border-radius: 8px; }
+          .stat-box.completed { background: #d1fae5; color: #059669; }
+          .stat-box.upcoming { background: #dbeafe; color: #2563eb; }
+          .stat-box.cancelled { background: #fee2e2; color: #dc2626; }
+          .stat-number { font-size: 24px; font-weight: bold; }
+          .stat-label { font-size: 12px; margin-top: 5px; }
+          .section-title { font-size: 16px; font-weight: bold; margin: 20px 0 10px; color: #0891b2; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+          th { background: #f8fafc; font-weight: 600; }
+          .status { padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+          .status.completed { background: #d1fae5; color: #059669; }
+          .status.confirmed { background: #dbeafe; color: #2563eb; }
+          .status.pending { background: #fef3c7; color: #d97706; }
+          .status.cancelled { background: #fee2e2; color: #dc2626; }
+          .notes-section { margin-top: 20px; }
+          .note-item { padding: 10px; border-left: 3px solid #fbbf24; background: #fefce8; margin-bottom: 10px; }
+          .note-date { font-size: 11px; color: #666; margin-top: 5px; }
+          .footer { margin-top: 40px; text-align: center; color: #999; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">🦷 BrightSmile Dental</div>
+          <div class="subtitle">Patient Medical Report</div>
+        </div>
+        
+        <div class="patient-info">
+          <div class="patient-name">${patient.name}</div>
+          <div class="patient-contact">
+            📧 ${patient.email} &nbsp;&nbsp; 📞 ${patient.phone}
+          </div>
+        </div>
+        
+        <div class="stats">
+          <div class="stat-box completed">
+            <div class="stat-number">${completedCount}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-box upcoming">
+            <div class="stat-number">${upcomingCount}</div>
+            <div class="stat-label">Upcoming</div>
+          </div>
+          <div class="stat-box cancelled">
+            <div class="stat-number">${cancelledCount}</div>
+            <div class="stat-label">Cancelled</div>
+          </div>
+        </div>
+        
+        ${patientNotes.length > 0 ? `
+        <div class="notes-section">
+          <div class="section-title">📝 Doctor Notes</div>
+          ${patientNotes.map(note => `
+            <div class="note-item">
+              ${note.note_content}
+              <div class="note-date">${format(new Date(note.created_at), 'MMMM d, yyyy h:mm a')}</div>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+        
+        <div class="section-title">📅 Appointment History</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Service</th>
+              <th>Status</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${patient.appointments
+              .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date))
+              .map(apt => `
+                <tr>
+                  <td>${format(new Date(apt.appointment_date), 'MMM d, yyyy')}</td>
+                  <td>${apt.appointment_time}</td>
+                  <td>${apt.service}</td>
+                  <td><span class="status ${apt.status}">${apt.status}</span></td>
+                  <td>${apt.notes || '-'}</td>
+                </tr>
+              `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          Generated on ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')} | BrightSmile Dental Clinic
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+
+    toast({
+      title: 'PDF Ready',
+      description: `Patient report for ${patient.name} is ready for printing/saving as PDF.`,
+    });
   };
 
   useEffect(() => {
@@ -862,6 +1099,21 @@ const AdminDashboard = () => {
                     Refresh
                   </Button>
 
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="rounded-xl">
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={exportAllAppointmentsToCSV}>
+                        <FileDown className="h-4 w-4 mr-2" />
+                        Export to CSV
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
                   <div className="flex gap-1 border rounded-xl p-1 bg-muted/50">
                     <Button
                       variant={viewMode === 'list' ? 'default' : 'ghost'}
@@ -1031,7 +1283,7 @@ const AdminDashboard = () => {
                       View patient history and appointment records
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -1041,6 +1293,20 @@ const AdminDashboard = () => {
                         className="pl-9 w-[250px] rounded-xl"
                       />
                     </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="rounded-xl">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export All
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={exportAllPatientsToCSV}>
+                          <FileDown className="h-4 w-4 mr-2" />
+                          Export All Patients to CSV
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CardHeader>
@@ -1527,15 +1793,39 @@ const AdminDashboard = () => {
                 </DialogDescription>
               </div>
               {selectedPatient && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePrintReport}
-                  className="rounded-xl"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Report
-                </Button>
+                <div className="flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => exportPatientToCSV(selectedPatient)}>
+                        <FileDown className="h-4 w-4 mr-2" />
+                        Export to CSV
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => exportPatientToPDF(selectedPatient)}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Export to PDF
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrintReport}
+                    className="rounded-xl"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print
+                  </Button>
+                </div>
               )}
             </div>
           </DialogHeader>
