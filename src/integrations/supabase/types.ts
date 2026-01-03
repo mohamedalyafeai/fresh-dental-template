@@ -56,6 +56,36 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note_content: string
+          patient_email: string
+          patient_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note_content: string
+          patient_email: string
+          patient_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note_content?: string
+          patient_email?: string
+          patient_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

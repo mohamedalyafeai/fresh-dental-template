@@ -47,8 +47,14 @@ import {
   FileText,
   Search,
   ChevronRight,
-  Eye
+  Eye,
+  Printer,
+  Plus,
+  StickyNote,
+  MessageSquare
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import PrintablePatientReport from '@/components/PrintablePatientReport';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +97,16 @@ interface Patient {
   totalVisits: number;
   lastVisit: string | null;
   appointments: Appointment[];
+}
+
+interface PatientNote {
+  id: string;
+  patient_email: string;
+  patient_name: string;
+  note_content: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 const SERVICES = [
@@ -144,6 +160,12 @@ const AdminDashboard = () => {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [patientHistoryDialogOpen, setPatientHistoryDialogOpen] = useState(false);
+  
+  // Patient notes state
+  const [patientNotes, setPatientNotes] = useState<PatientNote[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [showPrintView, setShowPrintView] = useState(false);
   
   // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -254,6 +276,96 @@ const AdminDashboard = () => {
       ));
     }
   }, [appointments]);
+
+  // Fetch patient notes when patient is selected
+  const fetchPatientNotes = async (patientEmail: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_notes')
+        .select('*')
+        .eq('patient_email', patientEmail)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPatientNotes(data || []);
+    } catch (error) {
+      console.error('Error fetching patient notes:', error);
+      setPatientNotes([]);
+    }
+  };
+
+  // Save a new patient note
+  const savePatientNote = async () => {
+    if (!selectedPatient || !newNote.trim()) return;
+    
+    setIsSavingNote(true);
+    try {
+      const { error } = await supabase
+        .from('patient_notes')
+        .insert({
+          patient_email: selectedPatient.email,
+          patient_name: selectedPatient.name,
+          note_content: newNote.trim(),
+          created_by: user?.id
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Note Saved',
+        description: 'Patient note has been saved successfully.',
+      });
+
+      setNewNote('');
+      fetchPatientNotes(selectedPatient.email);
+    } catch (error) {
+      console.error('Error saving note:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save patient note.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
+  // Delete a patient note
+  const deletePatientNote = async (noteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('patient_notes')
+        .delete()
+        .eq('id', noteId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Note Deleted',
+        description: 'Patient note has been deleted.',
+      });
+
+      if (selectedPatient) {
+        fetchPatientNotes(selectedPatient.email);
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete note.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Print patient report
+  const handlePrintReport = () => {
+    setShowPrintView(true);
+    setTimeout(() => {
+      window.print();
+      setShowPrintView(false);
+    }, 100);
+  };
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -953,6 +1065,7 @@ const AdminDashboard = () => {
                           className="flex items-center justify-between p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer group"
                           onClick={() => {
                             setSelectedPatient(patient);
+                            fetchPatientNotes(patient.email);
                             setPatientHistoryDialogOpen(true);
                           }}
                         >
@@ -1394,16 +1507,37 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* Patient History Dialog */}
-      <Dialog open={patientHistoryDialogOpen} onOpenChange={setPatientHistoryDialogOpen}>
-        <DialogContent className="sm:max-w-2xl rounded-2xl max-h-[80vh] overflow-y-auto">
+      <Dialog open={patientHistoryDialogOpen} onOpenChange={(open) => {
+        setPatientHistoryDialogOpen(open);
+        if (!open) {
+          setNewNote('');
+          setPatientNotes([]);
+        }
+      }}>
+        <DialogContent className="sm:max-w-3xl rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserCircle className="h-5 w-5 text-primary" />
-              Patient History
-            </DialogTitle>
-            <DialogDescription>
-              Complete appointment history for {selectedPatient?.name}
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserCircle className="h-5 w-5 text-primary" />
+                  Patient History
+                </DialogTitle>
+                <DialogDescription>
+                  Complete appointment history and notes for {selectedPatient?.name}
+                </DialogDescription>
+              </div>
+              {selectedPatient && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrintReport}
+                  className="rounded-xl"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Report
+                </Button>
+              )}
+            </div>
           </DialogHeader>
           
           {selectedPatient && (
@@ -1431,13 +1565,107 @@ const AdminDashboard = () => {
                 </Badge>
               </div>
 
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-4 rounded-xl bg-emerald-500/10 text-center">
+                  <p className="text-2xl font-bold text-emerald-600">
+                    {selectedPatient.appointments.filter(a => a.status === 'completed').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </div>
+                <div className="p-4 rounded-xl bg-primary/10 text-center">
+                  <p className="text-2xl font-bold text-primary">
+                    {selectedPatient.appointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Upcoming</p>
+                </div>
+                <div className="p-4 rounded-xl bg-destructive/10 text-center">
+                  <p className="text-2xl font-bold text-destructive">
+                    {selectedPatient.appointments.filter(a => a.status === 'cancelled').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Cancelled</p>
+                </div>
+              </div>
+
+              {/* Doctor Notes Section */}
+              <div className="space-y-3">
+                <h4 className="font-medium flex items-center gap-2">
+                  <StickyNote className="h-4 w-4 text-amber-500" />
+                  Doctor Notes
+                </h4>
+                
+                {/* Add New Note */}
+                <div className="p-4 rounded-xl border bg-amber-50/50 dark:bg-amber-950/20 space-y-3">
+                  <Textarea
+                    placeholder="Add a note about this patient (treatment observations, recommendations, follow-up reminders, etc.)"
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    className="min-h-[80px] rounded-xl resize-none"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={savePatientNote}
+                      disabled={!newNote.trim() || isSavingNote}
+                      size="sm"
+                      className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                    >
+                      {isSavingNote ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Note
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Existing Notes */}
+                {patientNotes.length > 0 ? (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    {patientNotes.map(note => (
+                      <div 
+                        key={note.id} 
+                        className="p-3 rounded-xl border bg-card hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="text-sm whitespace-pre-wrap">{note.note_content}</p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              <MessageSquare className="h-3 w-3 inline mr-1" />
+                              {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => deletePatientNote(note.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No notes yet. Add your first note above.
+                  </p>
+                )}
+              </div>
+
               {/* Appointment History */}
               <div className="space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
                   <History className="h-4 w-4 text-primary" />
                   Appointment History
                 </h4>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
                   {selectedPatient.appointments
                     .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date))
                     .map(apt => (
@@ -1479,28 +1707,6 @@ const AdminDashboard = () => {
                     ))}
                 </div>
               </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-4 rounded-xl bg-emerald-500/10 text-center">
-                  <p className="text-2xl font-bold text-emerald-600">
-                    {selectedPatient.appointments.filter(a => a.status === 'completed').length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Completed</p>
-                </div>
-                <div className="p-4 rounded-xl bg-primary/10 text-center">
-                  <p className="text-2xl font-bold text-primary">
-                    {selectedPatient.appointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Upcoming</p>
-                </div>
-                <div className="p-4 rounded-xl bg-destructive/10 text-center">
-                  <p className="text-2xl font-bold text-destructive">
-                    {selectedPatient.appointments.filter(a => a.status === 'cancelled').length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Cancelled</p>
-                </div>
-              </div>
             </div>
           )}
 
@@ -1515,6 +1721,13 @@ const AdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Print View (Hidden until print) */}
+      {showPrintView && selectedPatient && (
+        <div className="fixed inset-0 bg-white z-[9999] overflow-auto print:static">
+          <PrintablePatientReport patient={selectedPatient} patientNotes={patientNotes} />
+        </div>
+      )}
     </div>
   );
 };
