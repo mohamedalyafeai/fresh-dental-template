@@ -57,6 +57,7 @@ import {
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import PrintablePatientReport from '@/components/PrintablePatientReport';
+import { UpcomingAppointmentsWidget } from '@/components/UpcomingAppointmentsWidget';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1017,6 +1018,14 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Upcoming Appointments Widget */}
+        <div className="mb-8">
+          <UpcomingAppointmentsWidget 
+            onViewAll={() => setActiveTab('appointments')}
+            onStatusChange={fetchAppointments}
+          />
         </div>
 
         {/* Tabs */}
