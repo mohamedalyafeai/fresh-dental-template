@@ -58,6 +58,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import PrintablePatientReport from '@/components/PrintablePatientReport';
 import { UpcomingAppointmentsWidget } from '@/components/UpcomingAppointmentsWidget';
+import { AppointmentAnalyticsChart } from '@/components/AppointmentAnalyticsChart';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1478,97 +1479,7 @@ const AdminDashboard = () => {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Revenue Overview */}
-              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-emerald-500" />
-                    Revenue Overview
-                  </CardTitle>
-                  <CardDescription>Estimated revenue based on appointments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-emerald-500/5">
-                      <div>
-                        <p className="text-sm text-muted-foreground">This Month</p>
-                        <p className="text-3xl font-bold">${(completedCount * 150).toLocaleString()}</p>
-                      </div>
-                      <TrendingUp className="h-8 w-8 text-emerald-500" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-muted/50">
-                        <p className="text-sm text-muted-foreground">Avg. per Visit</p>
-                        <p className="text-xl font-semibold">$150</p>
-                      </div>
-                      <div className="p-4 rounded-xl bg-muted/50">
-                        <p className="text-sm text-muted-foreground">Potential</p>
-                        <p className="text-xl font-semibold">${((confirmedCount + pendingCount) * 150).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Appointment Breakdown */}
-              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-primary" />
-                    Appointment Breakdown
-                  </CardTitle>
-                  <CardDescription>Status distribution of all appointments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      { label: 'Completed', count: completedCount, color: 'bg-emerald-500', percentage: totalAppointments ? Math.round((completedCount / totalAppointments) * 100) : 0 },
-                      { label: 'Confirmed', count: confirmedCount, color: 'bg-primary', percentage: totalAppointments ? Math.round((confirmedCount / totalAppointments) * 100) : 0 },
-                      { label: 'Pending', count: pendingCount, color: 'bg-amber-500', percentage: totalAppointments ? Math.round((pendingCount / totalAppointments) * 100) : 0 },
-                      { label: 'Cancelled', count: appointments.filter(a => a.status === 'cancelled').length, color: 'bg-destructive', percentage: totalAppointments ? Math.round((appointments.filter(a => a.status === 'cancelled').length / totalAppointments) * 100) : 0 },
-                    ].map(item => (
-                      <div key={item.label} className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span>{item.label}</span>
-                          <span className="font-medium">{item.count} ({item.percentage}%)</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <div 
-                            className={`h-full ${item.color} transition-all duration-500`}
-                            style={{ width: `${item.percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Popular Services */}
-              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-accent" />
-                    Popular Services
-                  </CardTitle>
-                  <CardDescription>Most booked services this period</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    {SERVICES.filter(s => s !== 'All Services').map(service => {
-                      const count = appointments.filter(a => a.service === service).length;
-                      return (
-                        <div key={service} className="p-4 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-colors text-center">
-                          <p className="text-2xl font-bold text-primary">{count}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{service}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <AppointmentAnalyticsChart appointments={appointments} />
           </TabsContent>
 
           {/* Settings Tab */}
