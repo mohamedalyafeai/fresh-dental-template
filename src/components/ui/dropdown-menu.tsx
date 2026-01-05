@@ -4,13 +4,21 @@ import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+const DropdownMenu = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>
+>((props, _ref) => <DropdownMenuPrimitive.Root {...props} />);
+DropdownMenu.displayName = "DropdownMenu";
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
 const DropdownMenuGroup = DropdownMenuPrimitive.Group;
 
-const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
+const DropdownMenuPortal = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Portal>
+>((props, _ref) => <DropdownMenuPrimitive.Portal {...props} />);
+DropdownMenuPortal.displayName = "DropdownMenuPortal";
 
 const DropdownMenuSub = DropdownMenuPrimitive.Sub;
 
