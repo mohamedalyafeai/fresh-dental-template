@@ -138,7 +138,7 @@ const Auth = () => {
           });
         }
       } else if (mode === 'signup') {
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, fullName, activeRole);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({
