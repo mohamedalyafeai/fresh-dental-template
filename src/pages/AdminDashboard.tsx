@@ -944,10 +944,16 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="rounded-xl">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => navigate('/admin/staff')} className="rounded-xl">
+              <Users className="h-4 w-4 mr-2" />
+              Staff Management
+            </Button>
+            <Button variant="outline" onClick={handleSignOut} className="rounded-xl">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
