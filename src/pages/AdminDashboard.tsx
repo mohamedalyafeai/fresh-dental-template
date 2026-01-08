@@ -926,7 +926,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background" dir="rtl">
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -939,19 +939,19 @@ const AdminDashboard = () => {
                 <Sparkles className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Admin Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Manage appointments & waitlist</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">لوحة التحكم</h1>
+                <p className="text-sm text-muted-foreground">إدارة المواعيد وقائمة الانتظار</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={() => navigate('/admin/staff')} className="rounded-xl">
-              <Users className="h-4 w-4 mr-2" />
-              Staff Management
+              <Users className="h-4 w-4 ml-2" />
+              إدارة الموظفين
             </Button>
             <Button variant="outline" onClick={handleSignOut} className="rounded-xl">
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              <LogOut className="h-4 w-4 ml-2" />
+              تسجيل الخروج
             </Button>
           </div>
         </div>
@@ -964,7 +964,7 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Total</p>
+                  <p className="text-sm text-muted-foreground font-medium">الإجمالي</p>
                   <p className="text-3xl font-bold">{totalAppointments}</p>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -977,7 +977,7 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Pending</p>
+                  <p className="text-sm text-muted-foreground font-medium">قيد الانتظار</p>
                   <p className="text-3xl font-bold">{pendingCount}</p>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center">
@@ -990,7 +990,7 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Confirmed</p>
+                  <p className="text-sm text-muted-foreground font-medium">مؤكد</p>
                   <p className="text-3xl font-bold">{confirmedCount}</p>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
@@ -1003,7 +1003,7 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Completed</p>
+                  <p className="text-sm text-muted-foreground font-medium">مكتمل</p>
                   <p className="text-3xl font-bold">{completedCount}</p>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
@@ -1016,7 +1016,7 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Waitlist</p>
+                  <p className="text-sm text-muted-foreground font-medium">قائمة الانتظار</p>
                   <p className="text-3xl font-bold">{waitlistCount}</p>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center">
@@ -1039,22 +1039,22 @@ const AdminDashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-card/80 backdrop-blur-sm border shadow-sm p-1 rounded-2xl flex-wrap">
             <TabsTrigger value="appointments" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
-              Appointments
+              المواعيد
             </TabsTrigger>
             <TabsTrigger value="patients" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
-              <UserCircle className="h-4 w-4 mr-2" />
-              Patients
+              <UserCircle className="h-4 w-4 ml-2" />
+              المرضى
             </TabsTrigger>
             <TabsTrigger value="waitlist" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
-              Waiting List {waitlistCount > 0 && <Badge variant="secondary" className="ml-2">{waitlistCount}</Badge>}
+              قائمة الانتظار {waitlistCount > 0 && <Badge variant="secondary" className="mr-2">{waitlistCount}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="analytics" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
+              <BarChart3 className="h-4 w-4 ml-2" />
+              التحليلات
             </TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
+              <Settings className="h-4 w-4 ml-2" />
+              الإعدادات
             </TabsTrigger>
           </TabsList>
 
