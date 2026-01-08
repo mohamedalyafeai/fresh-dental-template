@@ -23,6 +23,7 @@ import {
   Mail,
   RefreshCw
 } from 'lucide-react';
+import ActivityLogSection from '@/components/ActivityLogSection';
 
 interface UserWithRole {
   id: string;
@@ -45,6 +46,7 @@ const StaffManagement = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [actionType, setActionType] = useState<'promote' | 'demote'>('promote');
+  const [activityRefreshTrigger, setActivityRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (!authLoading) {
@@ -112,6 +114,7 @@ const StaffManagement = () => {
   const handlePromoteUser = async (targetUser: UserWithRole) => {
     setPromotingUserId(targetUser.id);
     try {
+      // Insert admin role
       const { error } = await supabase
         .from('user_roles')
         .insert({
@@ -121,12 +124,42 @@ const StaffManagement = () => {
 
       if (error) throw error;
 
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        user_id: user!.id,
+        action_type: 'promote',
+        target_user_id: targetUser.id,
+        target_user_email: targetUser.email,
+        details: `Promoted ${targetUser.full_name || targetUser.email} to Doctor/Admin`
+      });
+
+      // Send email notification
+      try {
+        const { data: adminProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', user!.id)
+          .maybeSingle();
+
+        await supabase.functions.invoke('send-role-change-notification', {
+          body: {
+            userEmail: targetUser.email,
+            userName: targetUser.full_name || targetUser.email,
+            actionType: 'promote',
+            adminName: adminProfile?.full_name || 'Admin'
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send notification email:', emailError);
+      }
+
       toast({
         title: 'User Promoted',
         description: `${targetUser.full_name || targetUser.email} is now a doctor/admin.`,
       });
 
       fetchUsers();
+      setActivityRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Error promoting user:', error);
       toast({
@@ -153,6 +186,7 @@ const StaffManagement = () => {
 
     setDemotingUserId(targetUser.id);
     try {
+      // Delete admin role
       const { error } = await supabase
         .from('user_roles')
         .delete()
@@ -161,12 +195,42 @@ const StaffManagement = () => {
 
       if (error) throw error;
 
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        user_id: user!.id,
+        action_type: 'demote',
+        target_user_id: targetUser.id,
+        target_user_email: targetUser.email,
+        details: `Demoted ${targetUser.full_name || targetUser.email} to Patient`
+      });
+
+      // Send email notification
+      try {
+        const { data: adminProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', user!.id)
+          .maybeSingle();
+
+        await supabase.functions.invoke('send-role-change-notification', {
+          body: {
+            userEmail: targetUser.email,
+            userName: targetUser.full_name || targetUser.email,
+            actionType: 'demote',
+            adminName: adminProfile?.full_name || 'Admin'
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send notification email:', emailError);
+      }
+
       toast({
         title: 'User Demoted',
         description: `${targetUser.full_name || targetUser.email} is now a patient.`,
       });
 
       fetchUsers();
+      setActivityRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Error demoting user:', error);
       toast({
@@ -398,6 +462,11 @@ const StaffManagement = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Activity Log Section */}
+        <div className="mt-8">
+          <ActivityLogSection refreshTrigger={activityRefreshTrigger} />
+        </div>
       </main>
 
       {/* Confirmation Dialog */}
