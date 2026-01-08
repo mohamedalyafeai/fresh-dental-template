@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 import { 
   Loader2, 
   ArrowLeft,
@@ -21,9 +22,13 @@ import {
   Stethoscope,
   Heart,
   Mail,
-  RefreshCw
+  RefreshCw,
+  Award,
+  Star
 } from 'lucide-react';
 import ActivityLogSection from '@/components/ActivityLogSection';
+import DoctorsList from '@/components/DoctorsList';
+import { t } from '@/lib/translations';
 
 interface UserWithRole {
   id: string;
@@ -54,8 +59,8 @@ const StaffManagement = () => {
         navigate('/auth?role=doctor');
       } else if (!isAdmin) {
         toast({
-          title: 'Access Denied',
-          description: 'You do not have admin privileges.',
+          title: t.common.error,
+          description: 'ليس لديك صلاحيات المشرف.',
           variant: 'destructive',
         });
         navigate('/');
@@ -96,8 +101,8 @@ const StaffManagement = () => {
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load users.',
+        title: t.common.error,
+        description: t.staff.errorLoading,
         variant: 'destructive',
       });
     } finally {
@@ -154,8 +159,8 @@ const StaffManagement = () => {
       }
 
       toast({
-        title: 'User Promoted',
-        description: `${targetUser.full_name || targetUser.email} is now a doctor/admin.`,
+        title: t.staff.userPromoted,
+        description: `${targetUser.full_name || targetUser.email} ${t.staff.isNowDoctor}`,
       });
 
       fetchUsers();
@@ -163,8 +168,8 @@ const StaffManagement = () => {
     } catch (error) {
       console.error('Error promoting user:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to promote user.',
+        title: t.common.error,
+        description: t.staff.errorPromoting,
         variant: 'destructive',
       });
     } finally {
@@ -177,8 +182,8 @@ const StaffManagement = () => {
     // Prevent demoting yourself
     if (targetUser.id === user?.id) {
       toast({
-        title: 'Cannot Demote Yourself',
-        description: 'You cannot remove your own admin privileges.',
+        title: t.staff.cannotDemoteSelf,
+        description: t.staff.cannotDemoteSelfDesc,
         variant: 'destructive',
       });
       return;
@@ -225,8 +230,8 @@ const StaffManagement = () => {
       }
 
       toast({
-        title: 'User Demoted',
-        description: `${targetUser.full_name || targetUser.email} is now a patient.`,
+        title: t.staff.userDemoted,
+        description: `${targetUser.full_name || targetUser.email} ${t.staff.isNowPatient}`,
       });
 
       fetchUsers();
@@ -234,8 +239,8 @@ const StaffManagement = () => {
     } catch (error) {
       console.error('Error demoting user:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to demote user.',
+        title: t.common.error,
+        description: t.staff.errorDemoting,
         variant: 'destructive',
       });
     } finally {
@@ -267,7 +272,7 @@ const StaffManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5" dir="rtl">
       {/* Header */}
       <header className="bg-card/80 backdrop-blur-xl border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -285,8 +290,8 @@ const StaffManagement = () => {
                   <Users className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold">Staff Management</h1>
-                  <p className="text-xs text-muted-foreground">Manage doctors and patients</p>
+                  <h1 className="text-lg font-bold">{t.staff.title}</h1>
+                  <p className="text-xs text-muted-foreground">{t.staff.subtitle}</p>
                 </div>
               </div>
             </div>
@@ -296,8 +301,8 @@ const StaffManagement = () => {
               onClick={fetchUsers}
               disabled={isLoading}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-4 w-4 ml-2 ${isLoading ? 'animate-spin' : ''}`} />
+              {t.common.refresh}
             </Button>
           </div>
         </div>
@@ -313,7 +318,7 @@ const StaffManagement = () => {
                   <Users className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Users</p>
+                  <p className="text-sm text-muted-foreground">{t.staff.totalUsers}</p>
                   <p className="text-2xl font-bold">{users.length}</p>
                 </div>
               </div>
@@ -327,7 +332,7 @@ const StaffManagement = () => {
                   <Stethoscope className="h-6 w-6 text-accent" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Doctors/Admins</p>
+                  <p className="text-sm text-muted-foreground">{t.staff.doctorsAdmins}</p>
                   <p className="text-2xl font-bold">{adminCount}</p>
                 </div>
               </div>
@@ -341,7 +346,7 @@ const StaffManagement = () => {
                   <Heart className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Patients</p>
+                  <p className="text-sm text-muted-foreground">{t.staff.patients}</p>
                   <p className="text-2xl font-bold">{patientCount}</p>
                 </div>
               </div>
@@ -349,21 +354,26 @@ const StaffManagement = () => {
           </Card>
         </div>
 
+        {/* Doctors List */}
+        <div className="mb-8">
+          <DoctorsList />
+        </div>
+
         {/* Search and Table */}
         <Card className="bg-card/50 backdrop-blur border-border/50">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle>All Users</CardTitle>
-                <CardDescription>Manage user roles and permissions</CardDescription>
+                <CardTitle>{t.staff.allUsers}</CardTitle>
+                <CardDescription>{t.staff.manageRoles}</CardDescription>
               </div>
               <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name or email..."
+                  placeholder={t.staff.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pr-10"
                 />
               </div>
             </div>
@@ -375,17 +385,17 @@ const StaffManagement = () => {
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                {searchQuery ? 'No users found matching your search.' : 'No users found.'}
+                {searchQuery ? t.staff.noUsersSearch : t.staff.noUsersFound}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right">{t.staff.user}</TableHead>
+                      <TableHead className="text-right">{t.staff.role}</TableHead>
+                      <TableHead className="text-right">{t.staff.joined}</TableHead>
+                      <TableHead className="text-left">{t.staff.actions}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -403,7 +413,7 @@ const StaffManagement = () => {
                               )}
                             </div>
                             <div>
-                              <p className="font-medium">{targetUser.full_name || 'No Name'}</p>
+                              <p className="font-medium">{targetUser.full_name || t.staff.noName}</p>
                               <p className="text-sm text-muted-foreground flex items-center gap-1">
                                 <Mail className="h-3 w-3" />
                                 {targetUser.email}
@@ -413,15 +423,19 @@ const StaffManagement = () => {
                         </TableCell>
                         <TableCell>
                           <Badge variant={targetUser.isAdmin ? 'default' : 'secondary'}>
-                            {targetUser.isAdmin ? 'Doctor/Admin' : 'Patient'}
+                            {targetUser.isAdmin ? (
+                              <><Stethoscope className="h-3 w-3 ml-1" /> {t.staff.doctorAdmin}</>
+                            ) : (
+                              t.staff.patient
+                            )}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {format(new Date(targetUser.created_at), 'MMM d, yyyy')}
+                          {format(new Date(targetUser.created_at), 'dd MMM yyyy', { locale: ar })}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-left">
                           {targetUser.id === user?.id ? (
-                            <Badge variant="outline">You</Badge>
+                            <Badge variant="outline">{t.common.you}</Badge>
                           ) : targetUser.isAdmin ? (
                             <Button
                               variant="outline"
@@ -431,11 +445,11 @@ const StaffManagement = () => {
                               className="text-destructive hover:text-destructive"
                             >
                               {demotingUserId === targetUser.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                <Loader2 className="h-4 w-4 animate-spin ml-2" />
                               ) : (
-                                <ShieldOff className="h-4 w-4 mr-2" />
+                                <ShieldOff className="h-4 w-4 ml-2" />
                               )}
-                              Demote to Patient
+                              {t.staff.demoteToPatient}
                             </Button>
                           ) : (
                             <Button
@@ -446,11 +460,11 @@ const StaffManagement = () => {
                               className="text-primary hover:text-primary"
                             >
                               {promotingUserId === targetUser.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                <Loader2 className="h-4 w-4 animate-spin ml-2" />
                               ) : (
-                                <Shield className="h-4 w-4 mr-2" />
+                                <Shield className="h-4 w-4 ml-2" />
                               )}
-                              Promote to Doctor
+                              {t.staff.promoteToDoctor}
                             </Button>
                           )}
                         </TableCell>
@@ -471,25 +485,25 @@ const StaffManagement = () => {
 
       {/* Confirmation Dialog */}
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {actionType === 'promote' ? 'Promote to Doctor/Admin?' : 'Demote to Patient?'}
+              {actionType === 'promote' ? t.staff.promoteTitle : t.staff.demoteTitle}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {actionType === 'promote' ? (
                 <>
-                  This will give <strong>{selectedUser?.full_name || selectedUser?.email}</strong> admin access to manage appointments, patients, and staff.
+                  سيمنح هذا <strong>{selectedUser?.full_name || selectedUser?.email}</strong> {t.staff.promoteDescription}
                 </>
               ) : (
                 <>
-                  This will remove admin privileges from <strong>{selectedUser?.full_name || selectedUser?.email}</strong>. They will only have patient access.
+                  سيزيل هذا صلاحيات المشرف من <strong>{selectedUser?.full_name || selectedUser?.email}</strong>. {t.staff.demoteDescription}
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (selectedUser) {
@@ -502,7 +516,7 @@ const StaffManagement = () => {
               }}
               className={actionType === 'demote' ? 'bg-destructive hover:bg-destructive/90' : ''}
             >
-              {actionType === 'promote' ? 'Promote' : 'Demote'}
+              {actionType === 'promote' ? t.staff.promote : t.staff.demote}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
