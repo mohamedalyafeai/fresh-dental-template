@@ -203,6 +203,86 @@ export const ar = {
     noDoctorsAvailable: 'لا يوجد أطباء متاحين حالياً',
     loadingDoctors: 'جاري تحميل الأطباء...',
   },
+
+  // Booking Modal
+  booking: {
+    title: 'حجز موعد',
+    subtitle: 'احجز موعدك في خطوات بسيطة',
+    
+    // Services
+    selectService: 'اختر الخدمة',
+    services: {
+      general: 'طب الأسنان العام',
+      whitening: 'تبييض الأسنان',
+      rootcanal: 'علاج قناة الجذر',
+      emergency: 'الرعاية الطارئة',
+      crowns: 'تيجان الأسنان',
+      cosmetic: 'طب الأسنان التجميلي',
+    },
+    duration: 'دقيقة',
+    
+    // Date & Time
+    selectDate: 'اختر التاريخ',
+    pickDate: 'اختر تاريخاً',
+    selectTime: 'اختر الوقت',
+    checkingAvailability: 'جاري التحقق من التوفر...',
+    noSlotsTitle: 'لا توجد مواعيد متاحة لهذا اليوم',
+    noSlotsDescription: 'جميع المواعيد محجوزة. يمكنك الانضمام لقائمة الانتظار أو اختيار تاريخ آخر.',
+    joinWaitlistButton: 'انضم لقائمة الانتظار',
+    bookedSlotsNote: 'الأوقات المشطوبة محجوزة مسبقاً',
+    
+    // Patient Info
+    yourInfo: 'معلوماتك',
+    joinWaitlistTitle: 'الانضمام لقائمة الانتظار',
+    waitlistNote: 'ستنضم لقائمة الانتظار ليوم {date}. سنتواصل معك عند توفر موعد.',
+    fullName: 'الاسم الكامل',
+    namePlaceholder: 'أحمد محمد',
+    emailAddress: 'البريد الإلكتروني',
+    emailPlaceholder: 'ahmed@example.com',
+    phoneNumber: 'رقم الهاتف',
+    phonePlaceholder: '(123) 456-7890',
+    additionalNotes: 'ملاحظات إضافية (اختياري)',
+    notesPlaceholder: 'أي مخاوف أو طلبات خاصة...',
+    
+    // Summary
+    appointmentSummary: 'ملخص الموعد',
+    waitlistRequest: 'طلب قائمة الانتظار',
+    service: 'الخدمة:',
+    date: 'التاريخ:',
+    preferredDate: 'التاريخ المفضل:',
+    time: 'الوقت:',
+    
+    // Buttons
+    continue: 'متابعة',
+    continueToWaitlist: 'متابعة للانضمام',
+    back: 'رجوع',
+    confirmBooking: 'تأكيد الحجز',
+    joinWaitlist: 'انضم لقائمة الانتظار',
+    booking: 'جاري الحجز...',
+    joining: 'جاري الانضمام...',
+    done: 'تم',
+    
+    // Confirmation
+    appointmentConfirmed: 'تم تأكيد الموعد!',
+    thankYou: 'شكراً لحجزكم مع برايت سمايل لطب الأسنان.',
+    confirmationSent: 'تم إرسال رسالة تأكيد إلى {email}',
+    
+    // Waitlist Confirmation
+    addedToWaitlist: 'تمت الإضافة لقائمة الانتظار!',
+    willNotify: 'سنُعلمك عند توفر موعد.',
+    willContact: 'سنتواصل معك على {email} عند توفر موعد.',
+    
+    // Toast messages
+    slotUnavailable: 'الوقت غير متاح',
+    slotJustBooked: 'تم حجز هذا الوقت للتو من شخص آخر. يرجى اختيار وقت مختلف.',
+    bookingSuccess: 'تم حجز الموعد!',
+    bookingSuccessDesc: 'تم إرسال رسالة تأكيد إليك.',
+    bookingFailed: 'فشل الحجز',
+    tryAgain: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+    waitlistSuccess: 'تمت الإضافة لقائمة الانتظار!',
+    waitlistSuccessDesc: 'سنتواصل معك عند توفر موعد.',
+    waitlistFailed: 'فشل الانضمام لقائمة الانتظار',
+  },
 };
 
 // English translations (for fallback)
