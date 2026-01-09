@@ -53,7 +53,9 @@ import {
   StickyNote,
   MessageSquare,
   Download,
-  FileDown
+  FileDown,
+  User,
+  Stethoscope
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import PrintablePatientReport from '@/components/PrintablePatientReport';
@@ -67,7 +69,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { AppointmentCalendar } from '@/components/AppointmentCalendar';
+import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments';
+import { DoctorSelect } from '@/components/DoctorSelect';
 import '@/styles/calendar.css';
+
 
 interface Appointment {
   id: string;
@@ -80,6 +85,7 @@ interface Appointment {
   status: string;
   notes: string | null;
   created_at: string;
+  doctor_id: string | null;
 }
 
 interface WaitlistEntry {
@@ -606,6 +612,16 @@ const AdminDashboard = () => {
     });
   };
 
+  // Realtime appointments subscription
+  useRealtimeAppointments({
+    onUpdate: () => {
+      if (user && isAdmin) {
+        fetchAppointments();
+        fetchWaitlist();
+      }
+    },
+  });
+
   useEffect(() => {
     if (user && isAdmin) {
       fetchAppointments();
@@ -945,6 +961,10 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => navigate('/admin/profile')} className="rounded-xl">
+              <User className="h-4 w-4 ml-2" />
+              ملفي الشخصي
+            </Button>
             <Button variant="outline" onClick={() => navigate('/admin/staff')} className="rounded-xl">
               <Users className="h-4 w-4 ml-2" />
               إدارة الموظفين
@@ -1185,12 +1205,12 @@ const AdminDashboard = () => {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Patient</TableHead>
-                            <TableHead>Service</TableHead>
-                            <TableHead>Date & Time</TableHead>
-                            <TableHead>Contact</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Actions</TableHead>
+                            <TableHead>المريض</TableHead>
+                            <TableHead>الخدمة</TableHead>
+                            <TableHead>التاريخ والوقت</TableHead>
+                            <TableHead>الطبيب المعالج</TableHead>
+                            <TableHead>الحالة</TableHead>
+                            <TableHead>الإجراءات</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1199,9 +1219,10 @@ const AdminDashboard = () => {
                               <TableCell>
                                 <div>
                                   <p className="font-medium">{appointment.patient_name}</p>
+                                  <p className="text-xs text-muted-foreground">{appointment.patient_email}</p>
                                   {appointment.notes && (
                                     <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                                      {appointment.notes}
+                                      📝 {appointment.notes}
                                     </p>
                                   )}
                                 </div>
@@ -1218,10 +1239,39 @@ const AdminDashboard = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="text-sm">
-                                  <p>{appointment.patient_email}</p>
-                                  <p className="text-muted-foreground">{appointment.patient_phone}</p>
-                                </div>
+                                <DoctorSelect
+                                  value={appointment.doctor_id || undefined}
+                                  onValueChange={async (doctorId) => {
+                                    try {
+                                      const { error } = await supabase
+                                        .from('appointments')
+                                        .update({ doctor_id: doctorId || null })
+                                        .eq('id', appointment.id);
+                                      
+                                      if (error) throw error;
+                                      
+                                      setAppointments(prev =>
+                                        prev.map(apt =>
+                                          apt.id === appointment.id
+                                            ? { ...apt, doctor_id: doctorId || null }
+                                            : apt
+                                        )
+                                      );
+                                      
+                                      toast({
+                                        title: 'تم التحديث',
+                                        description: 'تم تعيين الطبيب للموعد',
+                                      });
+                                    } catch (error) {
+                                      console.error('Error assigning doctor:', error);
+                                      toast({
+                                        title: 'خطأ',
+                                        description: 'فشل في تعيين الطبيب',
+                                        variant: 'destructive',
+                                      });
+                                    }
+                                  }}
+                                />
                               </TableCell>
                               <TableCell>
                                 <Badge variant={getStatusBadgeVariant(appointment.status)}>

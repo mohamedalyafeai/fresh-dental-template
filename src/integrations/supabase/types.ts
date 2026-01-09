@@ -49,6 +49,7 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           created_at: string
+          doctor_id: string | null
           id: string
           notes: string | null
           patient_email: string
@@ -62,6 +63,7 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           created_at?: string
+          doctor_id?: string | null
           id?: string
           notes?: string | null
           patient_email: string
@@ -75,6 +77,7 @@ export type Database = {
           appointment_date?: string
           appointment_time?: string
           created_at?: string
+          doctor_id?: string | null
           id?: string
           notes?: string | null
           patient_email?: string
@@ -83,6 +86,48 @@ export type Database = {
           reminder_sent?: string | null
           service?: string
           status?: string
+        }
+        Relationships: []
+      }
+      doctor_profiles: {
+        Row: {
+          avatar_url: string | null
+          badge_number: string | null
+          bio: string | null
+          created_at: string
+          id: string
+          is_available: boolean | null
+          phone: string | null
+          specialty: string | null
+          updated_at: string
+          user_id: string
+          years_experience: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          badge_number?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+          user_id: string
+          years_experience?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          badge_number?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+          user_id?: string
+          years_experience?: number | null
         }
         Relationships: []
       }
