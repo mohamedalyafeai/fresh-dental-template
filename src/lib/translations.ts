@@ -163,6 +163,46 @@ export const ar = {
     pediatricDentist: 'طبيب أسنان أطفال',
     cosmeticDentist: 'طبيب تجميل الأسنان',
   },
+
+  // Doctor Profile
+  doctorProfile: {
+    title: 'الملف الشخصي للطبيب',
+    subtitle: 'تحديث معلوماتك وتخصصك',
+    badgeNumber: 'رقم الشارة الطبية',
+    doctorInfo: 'معلومات الطبيب',
+    completeProfile: 'أكمل ملفك الشخصي ليظهر للمرضى عند حجز المواعيد',
+    specialty: 'التخصص',
+    selectSpecialty: 'اختر التخصص',
+    yearsExperience: 'سنوات الخبرة',
+    phone: 'رقم الهاتف',
+    bio: 'نبذة عنك',
+    bioPlaceholder: 'اكتب نبذة مختصرة عن خبراتك ومؤهلاتك...',
+    availableForAppointments: 'متاح للمواعيد',
+    availableDesc: 'عند التعطيل، لن يتمكن المرضى من اختيارك للمواعيد الجديدة',
+    saveChanges: 'حفظ التغييرات',
+    saving: 'جاري الحفظ...',
+    saved: 'تم الحفظ',
+    profileUpdated: 'تم تحديث الملف الشخصي بنجاح',
+    backToDashboard: 'العودة للوحة التحكم',
+    notDefined: 'غير محدد',
+    myProfile: 'ملفي الشخصي',
+  },
+
+  // Realtime notifications
+  realtime: {
+    newAppointment: 'موعد جديد!',
+    statusChanged: 'تغيير حالة الموعد',
+    appointmentDeleted: 'تم حذف موعد',
+  },
+
+  // Doctor assignment
+  doctorAssignment: {
+    selectDoctor: 'اختر الطبيب المعالج',
+    assignedDoctor: 'الطبيب المعالج',
+    noDoctor: 'بدون طبيب محدد',
+    noDoctorsAvailable: 'لا يوجد أطباء متاحين حالياً',
+    loadingDoctors: 'جاري تحميل الأطباء...',
+  },
 };
 
 // English translations (for fallback)
