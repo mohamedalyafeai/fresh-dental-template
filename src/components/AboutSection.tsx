@@ -2,41 +2,51 @@ import { Sparkles, Award, Users, Clock, ShieldCheck } from "lucide-react";
 import dentist1 from "@/assets/dentist-1.jpg";
 import dentist2 from "@/assets/dentist-2.jpg";
 import hygienist1 from "@/assets/hygienist-1.jpg";
-
-const teamMembers = [
-  {
-    name: "Dr. Michael Roberts",
-    role: "Lead Dentist & Founder",
-    image: dentist1,
-    description: "20+ years of experience in restorative and cosmetic dentistry.",
-    specialties: ["Implants", "Cosmetic"],
-  },
-  {
-    name: "Dr. Sarah Mitchell",
-    role: "Orthodontist",
-    image: dentist2,
-    description: "Specialist in Invisalign and traditional braces treatments.",
-    specialties: ["Invisalign", "Braces"],
-  },
-  {
-    name: "Emma Johnson",
-    role: "Dental Hygienist",
-    image: hygienist1,
-    description: "Passionate about preventive care and patient education.",
-    specialties: ["Cleaning", "Prevention"],
-  },
-];
-
-const stats = [
-  { icon: Users, value: "10K+", label: "Happy Patients" },
-  { icon: Award, value: "20+", label: "Years Experience" },
-  { icon: Clock, value: "15+", label: "Expert Staff" },
-  { icon: ShieldCheck, value: "98%", label: "Satisfaction Rate" },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const AboutSection = () => {
+  const { t, isRTL } = useLanguage();
+
+  const teamMembers = [
+    {
+      name: t.about.doctor1Name,
+      role: t.about.doctor1Role,
+      image: dentist1,
+      description: t.about.doctor1Desc,
+      specialties: [t.about.implants, t.about.cosmetic],
+    },
+    {
+      name: t.about.doctor2Name,
+      role: t.about.doctor2Role,
+      image: dentist2,
+      description: t.about.doctor2Desc,
+      specialties: [t.about.invisalign, t.about.braces],
+    },
+    {
+      name: t.about.doctor3Name,
+      role: t.about.doctor3Role,
+      image: hygienist1,
+      description: t.about.doctor3Desc,
+      specialties: [t.about.cleaning, t.about.prevention],
+    },
+  ];
+
+  const stats = [
+    { icon: Users, value: "10K+", label: t.about.happyPatients },
+    { icon: Award, value: "20+", label: t.about.yearsExperience },
+    { icon: Clock, value: "15+", label: t.about.expertStaff },
+    { icon: ShieldCheck, value: "98%", label: t.about.satisfactionRate },
+  ];
+
+  const features = [
+    t.about.feature1,
+    t.about.feature2,
+    t.about.feature3,
+    t.about.feature4,
+  ];
+
   return (
-    <section id="about" className="py-20 md:py-28 bg-card relative overflow-hidden">
+    <section id="about" className="py-20 md:py-28 bg-card relative overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
@@ -48,14 +58,13 @@ const AboutSection = () => {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm mb-6">
             <Sparkles className="w-4 h-4" />
-            About Us
+            {t.about.badge}
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-            Meet Our <span className="text-gradient">Expert Team</span>
+            {t.about.title} <span className="text-gradient">{t.about.titleHighlight}</span>
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            At BrightSmile Dental, we combine cutting-edge technology with compassionate care. 
-            Our team of experienced professionals is dedicated to making every visit comfortable and effective.
+            {t.about.subtitle}
           </p>
         </div>
 
@@ -77,7 +86,7 @@ const AboutSection = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
                 
                 {/* Specialties badges */}
-                <div className="absolute bottom-4 left-4 flex gap-2">
+                <div className={`absolute bottom-4 ${isRTL ? 'right-4' : 'left-4'} flex gap-2`}>
                   {member.specialties.map((specialty) => (
                     <span 
                       key={specialty} 
@@ -110,20 +119,18 @@ const AboutSection = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
-                Our Mission
+                {t.about.missionTitle}
               </h3>
               <p className="text-muted-foreground leading-relaxed mb-4 text-lg">
-                We believe everyone deserves access to quality dental care. Our mission is to provide 
-                exceptional, personalized treatment in a warm and welcoming environment.
+                {t.about.missionPara1}
               </p>
               <p className="text-muted-foreground leading-relaxed text-lg">
-                From routine cleanings to complex procedures, we use the latest technology 
-                and techniques to ensure the best possible outcomes for our patients.
+                {t.about.missionPara2}
               </p>
               
               {/* Features list */}
               <div className="mt-8 grid grid-cols-2 gap-4">
-                {["State-of-the-art equipment", "Comfortable environment", "Personalized care plans", "Flexible scheduling"].map((feature) => (
+                {features.map((feature) => (
                   <div key={feature} className="flex items-center gap-2 text-sm text-foreground">
                     <div className="w-2 h-2 rounded-full bg-primary" />
                     {feature}
