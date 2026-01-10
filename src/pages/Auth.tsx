@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +33,7 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string; confirmPassword?: string }>({});
   
   const { signIn, signUp, user, isLoading, isAdmin, resetPassword, updatePassword } = useAuth();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -65,25 +67,25 @@ const Auth = () => {
     if (mode !== 'reset') {
       const emailResult = emailSchema.safeParse(email);
       if (!emailResult.success) {
-        newErrors.email = emailResult.error.errors[0].message;
+        newErrors.email = t.auth.invalidEmail;
       }
     }
     
     if (mode === 'login' || mode === 'signup' || mode === 'reset') {
       const passwordResult = passwordSchema.safeParse(password);
       if (!passwordResult.success) {
-        newErrors.password = passwordResult.error.errors[0].message;
+        newErrors.password = t.auth.passwordMinLength;
       }
     }
     
     if (mode === 'reset') {
       if (password !== confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
+        newErrors.confirmPassword = t.auth.passwordsNotMatch;
       }
     }
     
     if (mode === 'signup' && fullName.trim().length < 2) {
-      newErrors.fullName = 'Please enter your full name';
+      newErrors.fullName = t.auth.nameRequired;
     }
     
     setErrors(newErrors);
@@ -100,8 +102,8 @@ const Auth = () => {
       const { allowed, lockoutRemaining } = checkRateLimit();
       if (!allowed) {
         toast({
-          title: 'Too Many Attempts',
-          description: `Account temporarily locked. Please try again in ${lockoutRemaining} minutes.`,
+          title: t.auth.tooManyAttempts,
+          description: t.auth.accountLocked.replace('{minutes}', String(lockoutRemaining)),
           variant: 'destructive',
         });
         return;
@@ -119,13 +121,13 @@ const Auth = () => {
           
           if (error.message.includes('Invalid login credentials')) {
             toast({
-              title: 'Login Failed',
-              description: `Invalid email or password. ${remainingAttempts > 0 ? `${remainingAttempts} attempts remaining.` : 'Account will be locked.'}`,
+              title: t.auth.loginFailed,
+              description: `${t.auth.invalidCredentials} ${remainingAttempts > 0 ? t.auth.attemptsRemaining.replace('{count}', String(remainingAttempts)) : ''}`,
               variant: 'destructive',
             });
           } else {
             toast({
-              title: 'Login Failed',
+              title: t.auth.loginFailed,
               description: error.message,
               variant: 'destructive',
             });
@@ -133,8 +135,8 @@ const Auth = () => {
         } else {
           resetLimit();
           toast({
-            title: 'Welcome back!',
-            description: 'You have successfully logged in.',
+            title: t.auth.welcomeBack,
+            description: t.auth.signedInSuccess,
           });
         }
       } else if (mode === 'signup') {
@@ -142,35 +144,35 @@ const Auth = () => {
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({
-              title: 'Account Exists',
-              description: 'An account with this email already exists. Please log in instead.',
+              title: t.auth.accountExists,
+              description: t.auth.accountExistsDesc,
               variant: 'destructive',
             });
           } else {
             toast({
-              title: 'Sign Up Failed',
+              title: t.auth.signUpFailed,
               description: error.message,
               variant: 'destructive',
             });
           }
         } else {
           toast({
-            title: 'Account Created!',
-            description: 'Welcome to BrightSmile Dental.',
+            title: t.auth.accountCreated,
+            description: t.auth.welcomeTo,
           });
         }
       } else if (mode === 'forgot') {
         const { error } = await resetPassword(email);
         if (error) {
           toast({
-            title: 'Reset Failed',
+            title: t.auth.resetFailed,
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: 'Reset Email Sent',
-            description: 'Check your email for the password reset link.',
+            title: t.auth.resetEmailSent,
+            description: t.auth.checkEmail,
           });
           setMode('login');
         }
@@ -178,22 +180,22 @@ const Auth = () => {
         const { error } = await updatePassword(password);
         if (error) {
           toast({
-            title: 'Update Failed',
+            title: t.auth.updateFailed,
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: 'Password Updated',
-            description: 'Your password has been successfully updated.',
+            title: t.auth.passwordUpdated,
+            description: t.auth.passwordUpdatedDesc,
           });
           navigate('/portal');
         }
       }
     } catch {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        title: t.common.error,
+        description: t.auth.unexpectedError,
         variant: 'destructive',
       });
     } finally {
@@ -213,35 +215,35 @@ const Auth = () => {
 
   const getTitle = () => {
     switch (mode) {
-      case 'login': return 'Sign in to your account';
-      case 'signup': return 'Create a new account';
-      case 'forgot': return 'Reset your password';
-      case 'reset': return 'Set new password';
+      case 'login': return t.auth.signInTitle;
+      case 'signup': return t.auth.signUpTitle;
+      case 'forgot': return t.auth.forgotTitle;
+      case 'reset': return t.auth.resetTitle;
     }
   };
 
   const getButtonText = () => {
     if (isSubmitting) {
       switch (mode) {
-        case 'login': return 'Signing In...';
-        case 'signup': return 'Creating Account...';
-        case 'forgot': return 'Sending Reset Link...';
-        case 'reset': return 'Updating Password...';
+        case 'login': return t.auth.signingIn;
+        case 'signup': return t.auth.creatingAccount;
+        case 'forgot': return t.auth.sendingResetLink;
+        case 'reset': return t.auth.updatingPassword;
       }
     }
     switch (mode) {
-      case 'login': return 'Sign In';
-      case 'signup': return 'Create Account';
-      case 'forgot': return 'Send Reset Link';
-      case 'reset': return 'Update Password';
+      case 'login': return t.auth.signIn;
+      case 'signup': return t.auth.signUp;
+      case 'forgot': return t.auth.sendResetLink;
+      case 'reset': return t.auth.updatePassword;
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4 relative overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-accent/20 to-transparent rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+      <div className={`absolute top-0 ${isRTL ? 'right-0' : 'left-0'} w-96 h-96 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl ${isRTL ? 'translate-x-1/2' : '-translate-x-1/2'} -translate-y-1/2`} />
+      <div className={`absolute bottom-0 ${isRTL ? 'left-0' : 'right-0'} w-96 h-96 bg-gradient-to-tl from-accent/20 to-transparent rounded-full blur-3xl ${isRTL ? '-translate-x-1/2' : 'translate-x-1/2'} translate-y-1/2`} />
       
       <Card className="w-full max-w-md relative z-10 border-0 shadow-2xl bg-card/80 backdrop-blur-xl">
         <CardHeader className="text-center space-y-4 pb-2">
@@ -250,7 +252,7 @@ const Auth = () => {
           </div>
           <div className="space-y-1">
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              BrightSmile Dental
+              {t.auth.brandName}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               {getTitle()}
@@ -261,9 +263,9 @@ const Auth = () => {
         {/* Rate Limit Warning */}
         {!allowed && (
           <div className="px-6">
-            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+            <div className={`flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
               <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-              <span>Account temporarily locked. Try again in {lockoutRemaining} minutes.</span>
+              <span>{t.auth.accountLocked.replace('{minutes}', String(lockoutRemaining))}</span>
             </div>
           </div>
         )}
@@ -273,13 +275,13 @@ const Auth = () => {
           <div className="px-6 pt-2">
             <Tabs value={activeRole} onValueChange={(v) => setActiveRole(v as 'patient' | 'doctor')} className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-muted/50">
-                <TabsTrigger value="patient" className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <TabsTrigger value="patient" className={`flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Heart className="h-4 w-4" />
-                  Patient
+                  {t.auth.patient}
                 </TabsTrigger>
-                <TabsTrigger value="doctor" className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <TabsTrigger value="doctor" className={`flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Stethoscope className="h-4 w-4" />
-                  Doctor
+                  {t.auth.doctor}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -290,16 +292,16 @@ const Auth = () => {
           <CardContent className="space-y-4 pt-6">
             {mode === 'signup' && (
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm font-medium">Full Name</Label>
+                <Label htmlFor="fullName" className="text-sm font-medium">{t.auth.fullName}</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <User className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                   <Input
                     id="fullName"
                     type="text"
-                    placeholder={activeRole === 'doctor' ? "Dr. John Smith" : "John Smith"}
+                    placeholder={activeRole === 'doctor' ? t.auth.doctorNamePlaceholder : t.auth.fullNamePlaceholder}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary"
+                    className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary`}
                     disabled={isSubmitting}
                   />
                 </div>
@@ -311,16 +313,16 @@ const Auth = () => {
             
             {mode !== 'reset' && (
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">{t.auth.email}</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={t.auth.emailPlaceholder}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary"
+                    className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary`}
                     disabled={isSubmitting}
                   />
                 </div>
@@ -333,17 +335,17 @@ const Auth = () => {
             {(mode === 'login' || mode === 'signup' || mode === 'reset') && (
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium">
-                  {mode === 'reset' ? 'New Password' : 'Password'}
+                  {mode === 'reset' ? t.auth.newPassword : t.auth.password}
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                   <Input
                     id="password"
                     type="password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary"
+                    className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary`}
                     disabled={isSubmitting}
                   />
                 </div>
@@ -355,16 +357,16 @@ const Auth = () => {
             
             {mode === 'reset' && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-sm font-medium">{t.auth.confirmPassword}</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                   <Input
                     id="confirmPassword"
                     type="password"
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary"
+                    className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary`}
                     disabled={isSubmitting}
                   />
                 </div>
@@ -383,7 +385,7 @@ const Auth = () => {
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
                   {getButtonText()}
                 </>
               ) : (
@@ -402,7 +404,7 @@ const Auth = () => {
                 }}
                 disabled={isSubmitting}
               >
-                Forgot your password?
+                {t.auth.forgotPassword}
               </Button>
             )}
             
@@ -413,7 +415,7 @@ const Auth = () => {
                     <div className="w-full border-t border-muted-foreground/20"></div>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">or</span>
+                    <span className="bg-card px-2 text-muted-foreground">{t.auth.or}</span>
                   </div>
                 </div>
                 
@@ -427,9 +429,7 @@ const Auth = () => {
                   }}
                   disabled={isSubmitting}
                 >
-                  {mode === 'login' 
-                    ? "Don't have an account? Sign up" 
-                    : 'Already have an account? Sign in'}
+                  {mode === 'login' ? t.auth.noAccount : t.auth.hasAccount}
                 </Button>
               </>
             )}
@@ -438,25 +438,27 @@ const Auth = () => {
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full text-muted-foreground hover:text-foreground flex items-center gap-2"
+                className={`w-full text-muted-foreground hover:text-foreground flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
                 onClick={() => {
                   setMode('login');
                   setErrors({});
                 }}
                 disabled={isSubmitting}
               >
-                <ArrowLeft className="h-4 w-4" />
-                Back to sign in
+                <ArrowLeft className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
+                {t.auth.backToSignIn}
               </Button>
             )}
             
             <Button
               type="button"
-              variant="link"
-              className="text-sm text-muted-foreground hover:text-primary"
+              variant="ghost"
+              className={`w-full text-muted-foreground hover:text-foreground flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
               onClick={() => navigate('/')}
+              disabled={isSubmitting}
             >
-              ← Back to home
+              <ArrowLeft className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
+              {t.auth.backToHome}
             </Button>
           </CardFooter>
         </form>
