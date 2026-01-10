@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -44,6 +45,7 @@ const getStatusBadgeVariant = (status: string) => {
 
 const PatientPortal = () => {
   const { user, isLoading: authLoading, signOut } = useAuth();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -85,8 +87,8 @@ const PatientPortal = () => {
     } catch (error) {
       console.error('Error fetching appointments:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load your appointments.',
+        title: t.common.error,
+        description: t.portal.errorLoading,
         variant: 'destructive',
       });
     } finally {
@@ -142,14 +144,14 @@ const PatientPortal = () => {
 
       await fetchAppointments();
       toast({
-        title: 'Appointment Rescheduled',
-        description: `Your appointment has been rescheduled to ${format(newDate, 'MMM d, yyyy')} at ${newTime}.`,
+        title: t.portal.appointmentRescheduled,
+        description: t.portal.rescheduledTo.replace('{date}', format(newDate, 'MMM d, yyyy')).replace('{time}', newTime),
       });
     } catch (error) {
       console.error('Error rescheduling:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to reschedule appointment.',
+        title: t.common.error,
+        description: t.portal.errorReschedule,
         variant: 'destructive',
       });
     } finally {
@@ -194,14 +196,14 @@ const PatientPortal = () => {
 
       await fetchAppointments();
       toast({
-        title: 'Appointment Cancelled',
-        description: 'Your appointment has been cancelled.',
+        title: t.portal.appointmentCancelled,
+        description: t.portal.cancelledDesc,
       });
     } catch (error) {
       console.error('Error cancelling:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to cancel appointment.',
+        title: t.common.error,
+        description: t.portal.errorCancel,
         variant: 'destructive',
       });
     } finally {
@@ -236,27 +238,27 @@ const PatientPortal = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
-            <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="w-10 h-10 hero-gradient rounded-xl flex items-center justify-center">
                 <Smile className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold">My Appointments</h1>
+              <div className={isRTL ? 'text-right' : ''}>
+                <h1 className="text-xl font-bold">{t.portal.title}</h1>
                 <p className="text-sm text-muted-foreground">{user.email}</p>
               </div>
             </div>
           </div>
           <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
+            <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {t.portal.signOut}
           </Button>
         </div>
       </header>
@@ -270,10 +272,10 @@ const PatientPortal = () => {
           <Card className="max-w-lg mx-auto">
             <CardContent className="text-center py-12">
               <CalendarIcon2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h2 className="text-xl font-semibold mb-2">No Appointments Yet</h2>
-              <p className="text-muted-foreground mb-6">Book your first appointment with us!</p>
+              <h2 className="text-xl font-semibold mb-2">{t.portal.noAppointmentsTitle}</h2>
+              <p className="text-muted-foreground mb-6">{t.portal.noAppointmentsDesc}</p>
               <Button variant="hero" onClick={() => navigate('/')}>
-                Book Now
+                {t.portal.bookNow}
               </Button>
             </CardContent>
           </Card>
@@ -281,14 +283,14 @@ const PatientPortal = () => {
           <div className="space-y-8">
             {/* Upcoming Appointments */}
             <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <h2 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <Clock className="h-5 w-5 text-primary" />
-                Upcoming Appointments ({upcomingAppointments.length})
+                {t.portal.upcomingAppointments} ({upcomingAppointments.length})
               </h2>
               {upcomingAppointments.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center text-muted-foreground">
-                    No upcoming appointments
+                    {t.portal.noUpcoming}
                   </CardContent>
                 </Card>
               ) : (
@@ -296,20 +298,20 @@ const PatientPortal = () => {
                   {upcomingAppointments.map(appointment => (
                     <Card key={appointment.id}>
                       <CardContent className="p-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
                           <div className="space-y-2">
-                            <div className="flex items-center gap-3">
+                            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                               <h3 className="font-semibold text-lg">{appointment.service}</h3>
                               <Badge variant={getStatusBadgeVariant(appointment.status)}>
                                 {appointment.status}
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-4 text-muted-foreground">
-                              <span className="flex items-center gap-1">
+                            <div className={`flex items-center gap-4 text-muted-foreground ${isRTL ? 'flex-row-reverse' : ''}`}>
+                              <span className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <CalendarIcon className="h-4 w-4" />
                                 {format(new Date(appointment.appointment_date), 'MMMM d, yyyy')}
                               </span>
-                              <span className="flex items-center gap-1">
+                              <span className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <Clock className="h-4 w-4" />
                                 {appointment.appointment_time}
                               </span>
@@ -324,16 +326,16 @@ const PatientPortal = () => {
                               size="sm"
                               onClick={() => handleRescheduleClick(appointment)}
                             >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Reschedule
+                              <Edit className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                              {t.portal.reschedule}
                             </Button>
                             <Button
                               variant="destructive"
                               size="sm"
                               onClick={() => handleCancelClick(appointment)}
                             >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Cancel
+                              <XCircle className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                              {t.portal.cancel}
                             </Button>
                           </div>
                         </div>
@@ -348,14 +350,14 @@ const PatientPortal = () => {
             {pastAppointments.length > 0 && (
               <div>
                 <h2 className="text-xl font-semibold mb-4 text-muted-foreground">
-                  Past Appointments ({pastAppointments.length})
+                  {t.portal.pastAppointments} ({pastAppointments.length})
                 </h2>
                 <div className="grid gap-4 opacity-70">
                   {pastAppointments.slice(0, 5).map(appointment => (
                     <Card key={appointment.id}>
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
+                        <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                          <div className={isRTL ? 'text-right' : ''}>
                             <h3 className="font-medium">{appointment.service}</h3>
                             <p className="text-sm text-muted-foreground">
                               {format(new Date(appointment.appointment_date), 'MMMM d, yyyy')} at {appointment.appointment_time}
@@ -377,20 +379,20 @@ const PatientPortal = () => {
 
       {/* Reschedule Dialog */}
       <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
-        <DialogContent>
+        <DialogContent dir={isRTL ? 'rtl' : 'ltr'}>
           <DialogHeader>
-            <DialogTitle>Reschedule Appointment</DialogTitle>
-            <DialogDescription>Select a new date and time for your appointment</DialogDescription>
+            <DialogTitle>{t.portal.rescheduleTitle}</DialogTitle>
+            <DialogDescription>{t.portal.rescheduleDesc}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">New Date</label>
+              <label className="text-sm font-medium">{t.portal.newDate}</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start", !newDate && "text-muted-foreground")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {newDate ? format(newDate, 'MMMM d, yyyy') : 'Select date'}
+                    <CalendarIcon className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                    {newDate ? format(newDate, 'MMMM d, yyyy') : t.portal.selectDate}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -407,10 +409,10 @@ const PatientPortal = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">New Time</label>
+              <label className="text-sm font-medium">{t.portal.newTime}</label>
               <Select value={newTime} onValueChange={setNewTime}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select time" />
+                  <SelectValue placeholder={t.portal.selectTime} />
                 </SelectTrigger>
                 <SelectContent>
                   {TIME_SLOTS.map(slot => (
@@ -420,18 +422,18 @@ const PatientPortal = () => {
               </Select>
             </div>
 
-            <div className="bg-muted rounded-lg p-3 flex items-start gap-2">
+            <div className={`bg-muted rounded-lg p-3 flex items-start gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
               <p className="text-sm text-muted-foreground">
-                Please reschedule at least 24 hours in advance to avoid any fees.
+                {t.portal.rescheduleNote}
               </p>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>Cancel</Button>
+          <DialogFooter className={isRTL ? 'flex-row-reverse' : ''}>
+            <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>{t.common.cancel}</Button>
             <Button variant="hero" onClick={confirmReschedule} disabled={isRescheduling || !newDate || !newTime}>
-              {isRescheduling ? 'Rescheduling...' : 'Confirm Reschedule'}
+              {isRescheduling ? t.portal.rescheduling : t.portal.confirmReschedule}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -439,23 +441,24 @@ const PatientPortal = () => {
 
       {/* Cancel Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent dir={isRTL ? 'rtl' : 'ltr'}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Appointment?</AlertDialogTitle>
+            <AlertDialogTitle>{t.portal.cancelTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel your {appointmentToCancel?.service} appointment on{' '}
-              {appointmentToCancel && format(new Date(appointmentToCancel.appointment_date), 'MMMM d, yyyy')} at{' '}
-              {appointmentToCancel?.appointment_time}?
+              {t.portal.cancelDesc
+                .replace('{service}', appointmentToCancel?.service || '')
+                .replace('{date}', appointmentToCancel ? format(new Date(appointmentToCancel.appointment_date), 'MMMM d, yyyy') : '')
+                .replace('{time}', appointmentToCancel?.appointment_time || '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Appointment</AlertDialogCancel>
+          <AlertDialogFooter className={isRTL ? 'flex-row-reverse' : ''}>
+            <AlertDialogCancel>{t.portal.keepAppointment}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmCancel}
               disabled={isCancelling}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive hover:bg-destructive/90"
             >
-              {isCancelling ? 'Cancelling...' : 'Yes, Cancel'}
+              {isCancelling ? t.portal.cancelling : t.portal.confirmCancel}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

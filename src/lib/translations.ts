@@ -384,6 +384,198 @@ export const ar = {
     accessibility: 'سهولة الوصول',
   },
 
+  // Services Section
+  servicesSection: {
+    badge: 'خدماتنا',
+    title: 'رعاية أسنان شاملة',
+    titleHighlight: 'لكل ابتسامة',
+    subtitle: 'من التنظيف الروتيني إلى الإجراءات المتقدمة، نقدم مجموعة كاملة من خدمات طب الأسنان لتلبية جميع احتياجات صحة الفم تحت سقف واحد.',
+    viewAllServices: 'عرض جميع الخدمات',
+    learnMore: 'اعرف المزيد',
+    
+    // Services
+    generalDentistry: {
+      title: 'طب الأسنان العام',
+      description: 'فحوصات شاملة، تنظيف، حشوات، ورعاية وقائية للحفاظ على ابتسامتك صحية.',
+      features: ['فحوصات دورية', 'تنظيف احترافي', 'حشوات الأسنان', 'أشعة وتشخيص'],
+    },
+    teethWhitening: {
+      title: 'تبييض الأسنان',
+      description: 'علاجات تبييض احترافية لابتسامة أكثر إشراقاً وثقة.',
+      features: ['تبييض في العيادة', 'أطقم منزلية', 'نتائج طويلة الأمد', 'آمن وفعال'],
+    },
+    rootCanal: {
+      title: 'علاج قناة الجذر',
+      description: 'علاجات لطيفة لقناة الجذر لإنقاذ الأسنان التالفة وتخفيف الألم.',
+      features: ['إجراء بدون ألم', 'الحفاظ على الأسنان', 'تقنية متقدمة', 'تعافي سريع'],
+    },
+    emergencyCare: {
+      title: 'الرعاية الطارئة',
+      description: 'مواعيد طوارئ في نفس اليوم للمشاكل والإصابات العاجلة.',
+      features: ['خدمة نفس اليوم', 'رعاية الإصابات', 'تخفيف الألم', 'متاح 24/7'],
+    },
+    dentalCrowns: {
+      title: 'تيجان الأسنان',
+      description: 'تيجان وجسور مصنوعة خصيصاً لترميم الأسنان التالفة أو المفقودة.',
+      features: ['مظهر طبيعي', 'مواد متينة', 'ملاءمة مثالية', 'تنفيذ سريع'],
+    },
+    cosmeticDentistry: {
+      title: 'طب الأسنان التجميلي',
+      description: 'قشور، ترابط، وتجميل الابتسامة للحصول على ابتسامة أحلامك.',
+      features: ['قشور البورسلين', 'ترابط الأسنان', 'تصميم الابتسامة', 'تجميل كامل'],
+    },
+  },
+
+  // Testimonials Section
+  testimonials: {
+    badge: 'آراء المرضى',
+    title: 'ماذا يقول',
+    titleHighlight: 'مرضانا',
+    subtitle: 'لا تأخذ كلامنا فقط. إليك ما يقوله مرضانا عن تجربتهم في برايت سمايل للأسنان.',
+    previousTestimonial: 'الشهادة السابقة',
+    nextTestimonial: 'الشهادة التالية',
+    goToTestimonial: 'انتقل إلى الشهادة',
+    
+    // Trust indicators
+    averageRating: 'متوسط التقييم',
+    fiveStarReviews: 'تقييمات 5 نجوم',
+    happyPatients: 'مرضى سعداء',
+    recommendUs: 'يوصون بنا',
+    
+    // Testimonial data
+    testimonial1: {
+      name: 'جنيفر آدمز',
+      role: 'مريضة منذ 5 سنوات',
+      content: 'أزور برايت سمايل منذ سنوات ولا يمكن أن أكون أسعد. الفريق دائماً ودود، العيادة نظيفة جداً، والدكتور روبرتس يهتم حقاً بمرضاه. عائلتي كلها تأتي الآن!',
+    },
+    testimonial2: {
+      name: 'ماركوس طومسون',
+      role: 'مريض لأول مرة',
+      content: 'كنت أخاف من أطباء الأسنان، لكن الفريق هنا جعلني أشعر بالراحة التامة. شرحوا كل شيء قبل القيام به وتفقدوني باستمرار. أتطلع الآن لمواعيدي!',
+    },
+    testimonial3: {
+      name: 'سارة تشين',
+      role: 'مريضة إنفزلاين',
+      content: 'قامت الدكتورة ميتشل بعمل رائع مع علاج إنفزلاين. كانت دقيقة ومحترفة وأسناني تبدو رائعة الآن. تستحق كل قرش! النتائج فاقت توقعاتي.',
+    },
+    testimonial4: {
+      name: 'روبرت ويليامز',
+      role: 'مريض طوارئ',
+      content: 'حدثت لي حالة طوارئ في نهاية الأسبوع واستقبلوني خلال ساعة. كانت الرعاية استثنائية وتابعوا معي عدة مرات للاطمئنان علي. هذا ما يجب أن تكون عليه الرعاية الصحية.',
+    },
+  },
+
+  // Patient Portal
+  portal: {
+    title: 'مواعيدي',
+    signOut: 'تسجيل الخروج',
+    noAppointmentsTitle: 'لا توجد مواعيد بعد',
+    noAppointmentsDesc: 'احجز أول موعد لك معنا!',
+    bookNow: 'احجز الآن',
+    upcomingAppointments: 'المواعيد القادمة',
+    noUpcoming: 'لا توجد مواعيد قادمة',
+    pastAppointments: 'المواعيد السابقة',
+    reschedule: 'إعادة الجدولة',
+    cancel: 'إلغاء',
+    
+    // Reschedule dialog
+    rescheduleTitle: 'إعادة جدولة الموعد',
+    rescheduleDesc: 'اختر تاريخاً ووقتاً جديداً لموعدك',
+    newDate: 'التاريخ الجديد',
+    selectDate: 'اختر تاريخاً',
+    newTime: 'الوقت الجديد',
+    selectTime: 'اختر وقتاً',
+    rescheduleNote: 'يرجى إعادة الجدولة قبل 24 ساعة على الأقل لتجنب أي رسوم.',
+    confirmReschedule: 'تأكيد إعادة الجدولة',
+    rescheduling: 'جاري إعادة الجدولة...',
+    
+    // Cancel dialog
+    cancelTitle: 'إلغاء الموعد؟',
+    cancelDesc: 'هل أنت متأكد أنك تريد إلغاء موعد {service} في {date} الساعة {time}؟',
+    keepAppointment: 'الاحتفاظ بالموعد',
+    confirmCancel: 'نعم، إلغاء الموعد',
+    cancelling: 'جاري الإلغاء...',
+    
+    // Toast messages
+    errorLoading: 'فشل في تحميل مواعيدك.',
+    appointmentRescheduled: 'تمت إعادة جدولة الموعد',
+    rescheduledTo: 'تم نقل موعدك إلى {date} الساعة {time}.',
+    errorReschedule: 'فشل في إعادة جدولة الموعد.',
+    appointmentCancelled: 'تم إلغاء الموعد',
+    cancelledDesc: 'تم إلغاء موعدك.',
+    errorCancel: 'فشل في إلغاء الموعد.',
+  },
+
+  // Auth Page
+  auth: {
+    brandName: 'برايت سمايل للأسنان',
+    signInTitle: 'تسجيل الدخول إلى حسابك',
+    signUpTitle: 'إنشاء حساب جديد',
+    forgotTitle: 'إعادة تعيين كلمة المرور',
+    resetTitle: 'تعيين كلمة مرور جديدة',
+    
+    // Tabs
+    patient: 'مريض',
+    doctor: 'طبيب',
+    
+    // Rate limit
+    tooManyAttempts: 'محاولات كثيرة جداً',
+    accountLocked: 'تم قفل الحساب مؤقتاً. يرجى المحاولة مرة أخرى بعد {minutes} دقيقة.',
+    attemptsRemaining: '{count} محاولة متبقية.',
+    
+    // Form fields
+    fullName: 'الاسم الكامل',
+    fullNamePlaceholder: 'أحمد محمد',
+    doctorNamePlaceholder: 'د. أحمد محمد',
+    email: 'البريد الإلكتروني',
+    emailPlaceholder: 'you@example.com',
+    password: 'كلمة المرور',
+    newPassword: 'كلمة المرور الجديدة',
+    confirmPassword: 'تأكيد كلمة المرور',
+    
+    // Validation
+    invalidEmail: 'يرجى إدخال بريد إلكتروني صالح',
+    passwordMinLength: 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
+    passwordsNotMatch: 'كلمات المرور غير متطابقة',
+    nameRequired: 'يرجى إدخال اسمك الكامل',
+    
+    // Buttons
+    signIn: 'تسجيل الدخول',
+    signingIn: 'جاري تسجيل الدخول...',
+    signUp: 'إنشاء حساب',
+    creatingAccount: 'جاري إنشاء الحساب...',
+    sendResetLink: 'إرسال رابط إعادة التعيين',
+    sendingResetLink: 'جاري الإرسال...',
+    updatePassword: 'تحديث كلمة المرور',
+    updatingPassword: 'جاري التحديث...',
+    
+    // Links
+    forgotPassword: 'نسيت كلمة المرور؟',
+    noAccount: 'ليس لديك حساب؟ سجل',
+    hasAccount: 'لديك حساب بالفعل؟ سجل الدخول',
+    backToSignIn: 'العودة لتسجيل الدخول',
+    backToHome: 'العودة للرئيسية',
+    or: 'أو',
+    
+    // Toast messages
+    welcomeBack: 'مرحباً بعودتك!',
+    signedInSuccess: 'تم تسجيل الدخول بنجاح.',
+    loginFailed: 'فشل تسجيل الدخول',
+    invalidCredentials: 'بريد إلكتروني أو كلمة مرور غير صحيحة.',
+    accountExists: 'الحساب موجود',
+    accountExistsDesc: 'يوجد حساب بهذا البريد الإلكتروني. يرجى تسجيل الدخول بدلاً من ذلك.',
+    signUpFailed: 'فشل إنشاء الحساب',
+    accountCreated: 'تم إنشاء الحساب!',
+    welcomeTo: 'مرحباً بك في برايت سمايل للأسنان.',
+    resetEmailSent: 'تم إرسال رابط إعادة التعيين',
+    checkEmail: 'تحقق من بريدك الإلكتروني للحصول على رابط إعادة تعيين كلمة المرور.',
+    resetFailed: 'فشل إعادة التعيين',
+    passwordUpdated: 'تم تحديث كلمة المرور',
+    passwordUpdatedDesc: 'تم تحديث كلمة المرور بنجاح.',
+    updateFailed: 'فشل التحديث',
+    unexpectedError: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
+  },
+
   // Header
   header: {
     home: 'الرئيسية',
@@ -530,39 +722,206 @@ export const en = {
     ctaSubtitle: 'Schedule your appointment today and take the first step towards a healthier, more confident smile.',
     bookAppointment: 'Book Appointment',
     callNow: 'Call Now',
-    
-    // Brand
     brandDesc: 'Providing exceptional dental care for the whole family since 2003. Your smile is our priority.',
-    
-    // Quick Links
     quickLinks: 'Quick Links',
     home: 'Home',
     aboutUs: 'About Us',
     servicesLink: 'Services',
     bookNow: 'Book Now',
-    
-    // Services
     servicesTitle: 'Services',
     generalDentistry: 'General Dentistry',
     teethWhitening: 'Teeth Whitening',
     rootCanals: 'Root Canals',
     emergencyCare: 'Emergency Care',
     cosmeticDentistry: 'Cosmetic Dentistry',
-    
-    // Contact
     contactUs: 'Contact Us',
     address: '123 Dental Avenue\nSuite 100\nNew York, NY 10001',
-    
-    // Hours
     monFri: 'Mon - Fri: 8:00 AM - 6:00 PM',
     saturday: 'Saturday: 9:00 AM - 2:00 PM',
     sunday: 'Sunday: Closed',
-    
-    // Bottom
     copyright: '© 2024 BrightSmile Dental. All rights reserved.',
     privacyPolicy: 'Privacy Policy',
     termsOfService: 'Terms of Service',
     accessibility: 'Accessibility',
+  },
+
+  // Services Section
+  servicesSection: {
+    badge: 'Our Services',
+    title: 'Complete Dental Care for',
+    titleHighlight: 'Every Smile',
+    subtitle: 'From routine cleanings to advanced procedures, we offer a full range of dental services to meet all your oral health needs under one roof.',
+    viewAllServices: 'View All Services',
+    learnMore: 'Learn more',
+    
+    generalDentistry: {
+      title: 'General Dentistry',
+      description: 'Comprehensive exams, cleanings, fillings, and preventive care to keep your smile healthy.',
+      features: ['Regular Checkups', 'Professional Cleaning', 'Dental Fillings', 'X-Rays & Diagnosis'],
+    },
+    teethWhitening: {
+      title: 'Teeth Whitening',
+      description: 'Professional whitening treatments for a brighter, more confident smile.',
+      features: ['In-Office Whitening', 'Take-Home Kits', 'Long-Lasting Results', 'Safe & Effective'],
+    },
+    rootCanal: {
+      title: 'Root Canal Therapy',
+      description: 'Gentle root canal treatments to save damaged teeth and relieve pain.',
+      features: ['Pain-Free Procedure', 'Tooth Preservation', 'Advanced Technology', 'Quick Recovery'],
+    },
+    emergencyCare: {
+      title: 'Emergency Care',
+      description: 'Same-day emergency appointments for urgent dental issues and injuries.',
+      features: ['Same-Day Service', 'Trauma Care', 'Pain Relief', '24/7 Availability'],
+    },
+    dentalCrowns: {
+      title: 'Dental Crowns',
+      description: 'Custom-made crowns and bridges to restore damaged or missing teeth.',
+      features: ['Natural Appearance', 'Durable Materials', 'Perfect Fit', 'Quick Turnaround'],
+    },
+    cosmeticDentistry: {
+      title: 'Cosmetic Dentistry',
+      description: 'Veneers, bonding, and smile makeovers for your dream smile.',
+      features: ['Porcelain Veneers', 'Dental Bonding', 'Smile Design', 'Full Makeovers'],
+    },
+  },
+
+  // Testimonials Section
+  testimonials: {
+    badge: 'Testimonials',
+    title: 'What Our',
+    titleHighlight: 'Patients Say',
+    subtitle: "Don't just take our word for it. Here's what our patients have to say about their experience at BrightSmile Dental.",
+    previousTestimonial: 'Previous testimonial',
+    nextTestimonial: 'Next testimonial',
+    goToTestimonial: 'Go to testimonial',
+    
+    averageRating: 'Average Rating',
+    fiveStarReviews: '5-Star Reviews',
+    happyPatients: 'Happy Patients',
+    recommendUs: 'Recommend Us',
+    
+    testimonial1: {
+      name: 'Jennifer Adams',
+      role: 'Patient for 5 years',
+      content: "I've been coming to BrightSmile for years and couldn't be happier. The staff is always friendly, the office is immaculate, and Dr. Roberts truly cares about his patients. My whole family comes here now!",
+    },
+    testimonial2: {
+      name: 'Marcus Thompson',
+      role: 'First-time patient',
+      content: 'I was terrified of dentists, but the team here made me feel completely at ease. They explained everything before doing it and checked on me constantly. I actually look forward to my appointments now!',
+    },
+    testimonial3: {
+      name: 'Sarah Chen',
+      role: 'Invisalign Patient',
+      content: 'Dr. Mitchell did an amazing job with my Invisalign treatment. She was thorough, professional, and my teeth look incredible now. Worth every penny! The results exceeded my expectations.',
+    },
+    testimonial4: {
+      name: 'Robert Williams',
+      role: 'Emergency Patient',
+      content: 'Had a dental emergency on a weekend and they got me in within an hour. The care was exceptional and they followed up multiple times to check on me. This is what healthcare should be.',
+    },
+  },
+
+  // Patient Portal
+  portal: {
+    title: 'My Appointments',
+    signOut: 'Sign Out',
+    noAppointmentsTitle: 'No Appointments Yet',
+    noAppointmentsDesc: 'Book your first appointment with us!',
+    bookNow: 'Book Now',
+    upcomingAppointments: 'Upcoming Appointments',
+    noUpcoming: 'No upcoming appointments',
+    pastAppointments: 'Past Appointments',
+    reschedule: 'Reschedule',
+    cancel: 'Cancel',
+    
+    rescheduleTitle: 'Reschedule Appointment',
+    rescheduleDesc: 'Select a new date and time for your appointment',
+    newDate: 'New Date',
+    selectDate: 'Select date',
+    newTime: 'New Time',
+    selectTime: 'Select time',
+    rescheduleNote: 'Please reschedule at least 24 hours in advance to avoid any fees.',
+    confirmReschedule: 'Confirm Reschedule',
+    rescheduling: 'Rescheduling...',
+    
+    cancelTitle: 'Cancel Appointment?',
+    cancelDesc: 'Are you sure you want to cancel your {service} appointment on {date} at {time}?',
+    keepAppointment: 'Keep Appointment',
+    confirmCancel: 'Yes, Cancel Appointment',
+    cancelling: 'Cancelling...',
+    
+    errorLoading: 'Failed to load your appointments.',
+    appointmentRescheduled: 'Appointment Rescheduled',
+    rescheduledTo: 'Your appointment has been rescheduled to {date} at {time}.',
+    errorReschedule: 'Failed to reschedule appointment.',
+    appointmentCancelled: 'Appointment Cancelled',
+    cancelledDesc: 'Your appointment has been cancelled.',
+    errorCancel: 'Failed to cancel appointment.',
+  },
+
+  // Auth Page
+  auth: {
+    brandName: 'BrightSmile Dental',
+    signInTitle: 'Sign in to your account',
+    signUpTitle: 'Create a new account',
+    forgotTitle: 'Reset your password',
+    resetTitle: 'Set new password',
+    
+    patient: 'Patient',
+    doctor: 'Doctor',
+    
+    tooManyAttempts: 'Too Many Attempts',
+    accountLocked: 'Account temporarily locked. Please try again in {minutes} minutes.',
+    attemptsRemaining: '{count} attempts remaining.',
+    
+    fullName: 'Full Name',
+    fullNamePlaceholder: 'John Doe',
+    doctorNamePlaceholder: 'Dr. John Smith',
+    email: 'Email',
+    emailPlaceholder: 'you@example.com',
+    password: 'Password',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    
+    invalidEmail: 'Please enter a valid email address',
+    passwordMinLength: 'Password must be at least 6 characters',
+    passwordsNotMatch: 'Passwords do not match',
+    nameRequired: 'Please enter your full name',
+    
+    signIn: 'Sign In',
+    signingIn: 'Signing In...',
+    signUp: 'Create Account',
+    creatingAccount: 'Creating Account...',
+    sendResetLink: 'Send Reset Link',
+    sendingResetLink: 'Sending Reset Link...',
+    updatePassword: 'Update Password',
+    updatingPassword: 'Updating Password...',
+    
+    forgotPassword: 'Forgot your password?',
+    noAccount: "Don't have an account? Sign up",
+    hasAccount: 'Already have an account? Sign in',
+    backToSignIn: 'Back to sign in',
+    backToHome: 'Back to Home',
+    or: 'or',
+    
+    welcomeBack: 'Welcome back!',
+    signedInSuccess: 'You have successfully logged in.',
+    loginFailed: 'Login Failed',
+    invalidCredentials: 'Invalid email or password.',
+    accountExists: 'Account Exists',
+    accountExistsDesc: 'An account with this email already exists. Please log in instead.',
+    signUpFailed: 'Sign Up Failed',
+    accountCreated: 'Account Created!',
+    welcomeTo: 'Welcome to BrightSmile Dental.',
+    resetEmailSent: 'Reset Email Sent',
+    checkEmail: 'Check your email for the password reset link.',
+    resetFailed: 'Reset Failed',
+    passwordUpdated: 'Password Updated',
+    passwordUpdatedDesc: 'Your password has been successfully updated.',
+    updateFailed: 'Update Failed',
+    unexpectedError: 'An unexpected error occurred. Please try again.',
   },
 
   // Header
