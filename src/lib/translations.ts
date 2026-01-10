@@ -283,6 +283,120 @@ export const ar = {
     waitlistSuccessDesc: 'سنتواصل معك عند توفر موعد.',
     waitlistFailed: 'فشل الانضمام لقائمة الانتظار',
   },
+  // Hero Section
+  hero: {
+    trustedBadge: 'موثوق من 10,000+ مريض',
+    title: 'ابتسامتك تستحق',
+    titleHighlight: 'رعاية متخصصة',
+    subtitle: 'استمتع برعاية أسنان استثنائية في بيئة مريحة وحديثة. فريقنا من المتخصصين مكرس لمنحك الابتسامة الصحية والجميلة التي تستحقها.',
+    bookAppointment: 'احجز موعداً',
+    learnMore: 'اعرف المزيد',
+    rating: 'تقييم 4.9',
+    reviews: '500+ تقييم',
+    years: '20+ سنة',
+    experience: 'خبرة',
+    certified: 'معتمد',
+    specialists: 'متخصصون',
+  },
+
+  // About Section
+  about: {
+    badge: 'من نحن',
+    title: 'تعرف على',
+    titleHighlight: 'فريقنا المتخصص',
+    subtitle: 'في برايت سمايل للأسنان، نجمع بين أحدث التقنيات والرعاية الحانية. فريقنا من المحترفين ذوي الخبرة مكرس لجعل كل زيارة مريحة وفعالة.',
+    
+    // Team members
+    doctor1Name: 'د. مايكل روبرتس',
+    doctor1Role: 'طبيب أسنان رئيسي ومؤسس',
+    doctor1Desc: '20+ سنة خبرة في طب الأسنان الترميمي والتجميلي.',
+    doctor2Name: 'د. سارة ميتشل',
+    doctor2Role: 'أخصائية تقويم',
+    doctor2Desc: 'متخصصة في إنفزلاين والتقويم التقليدي.',
+    doctor3Name: 'إيما جونسون',
+    doctor3Role: 'أخصائية صحة الأسنان',
+    doctor3Desc: 'شغوفة بالرعاية الوقائية وتثقيف المرضى.',
+    
+    // Specialties
+    implants: 'زراعة',
+    cosmetic: 'تجميل',
+    invisalign: 'إنفزلاين',
+    braces: 'تقويم',
+    cleaning: 'تنظيف',
+    prevention: 'وقاية',
+    
+    // Stats
+    happyPatients: 'مرضى سعداء',
+    yearsExperience: 'سنوات الخبرة',
+    expertStaff: 'فريق متخصص',
+    satisfactionRate: 'نسبة الرضا',
+    
+    // Mission
+    missionTitle: 'رسالتنا',
+    missionPara1: 'نؤمن بأن الجميع يستحق الوصول إلى رعاية أسنان عالية الجودة. مهمتنا هي تقديم علاج استثنائي ومخصص في بيئة دافئة ومرحبة.',
+    missionPara2: 'من التنظيف الروتيني إلى الإجراءات المعقدة، نستخدم أحدث التقنيات والأساليب لضمان أفضل النتائج الممكنة لمرضانا.',
+    
+    // Features
+    feature1: 'معدات متطورة',
+    feature2: 'بيئة مريحة',
+    feature3: 'خطط علاج مخصصة',
+    feature4: 'جدولة مرنة',
+  },
+
+  // Footer
+  footer: {
+    ctaTitle: 'هل أنت مستعد لابتسامة أفضل؟',
+    ctaSubtitle: 'احجز موعدك اليوم واتخذ الخطوة الأولى نحو ابتسامة أكثر صحة وثقة.',
+    bookAppointment: 'احجز موعداً',
+    callNow: 'اتصل الآن',
+    
+    // Brand
+    brandDesc: 'نقدم رعاية أسنان استثنائية للعائلة بأكملها منذ 2003. ابتسامتك هي أولويتنا.',
+    
+    // Quick Links
+    quickLinks: 'روابط سريعة',
+    home: 'الرئيسية',
+    aboutUs: 'من نحن',
+    servicesLink: 'الخدمات',
+    bookNow: 'احجز الآن',
+    
+    // Services
+    servicesTitle: 'الخدمات',
+    generalDentistry: 'طب الأسنان العام',
+    teethWhitening: 'تبييض الأسنان',
+    rootCanals: 'علاج الجذور',
+    emergencyCare: 'الرعاية الطارئة',
+    cosmeticDentistry: 'طب الأسنان التجميلي',
+    
+    // Contact
+    contactUs: 'تواصل معنا',
+    address: '123 شارع الأسنان\nالطابق 100\nنيويورك، NY 10001',
+    
+    // Hours
+    monFri: 'الإثنين - الجمعة: 8:00 ص - 6:00 م',
+    saturday: 'السبت: 9:00 ص - 2:00 م',
+    sunday: 'الأحد: مغلق',
+    
+    // Bottom
+    copyright: '© 2024 برايت سمايل للأسنان. جميع الحقوق محفوظة.',
+    privacyPolicy: 'سياسة الخصوصية',
+    termsOfService: 'شروط الخدمة',
+    accessibility: 'سهولة الوصول',
+  },
+
+  // Header
+  header: {
+    home: 'الرئيسية',
+    about: 'من نحن',
+    services: 'الخدمات',
+    account: 'الحساب',
+    adminDashboard: 'لوحة التحكم',
+    myAppointments: 'مواعيدي',
+    signIn: 'تسجيل الدخول',
+    signOut: 'تسجيل الخروج',
+    bookAppointment: 'احجز موعداً',
+    theme: 'المظهر',
+  },
 };
 
 // English translations (for fallback)
@@ -348,6 +462,311 @@ export const en = {
     assignedDoctor: 'Assigned Doctor',
     doctorsList: 'Doctors List',
     noDoctors: 'No doctors available',
+  },
+
+  // Hero Section
+  hero: {
+    trustedBadge: 'Trusted by 10,000+ Patients',
+    title: 'Your Smile Deserves',
+    titleHighlight: 'Expert Care',
+    subtitle: 'Experience exceptional dental care in a comfortable, modern environment. Our team of specialists is dedicated to giving you the healthy, beautiful smile you deserve.',
+    bookAppointment: 'Book Appointment',
+    learnMore: 'Learn More',
+    rating: '4.9 Rating',
+    reviews: '500+ Reviews',
+    years: '20+ Years',
+    experience: 'Experience',
+    certified: 'Certified',
+    specialists: 'Specialists',
+  },
+
+  // About Section
+  about: {
+    badge: 'About Us',
+    title: 'Meet Our',
+    titleHighlight: 'Expert Team',
+    subtitle: 'At BrightSmile Dental, we combine cutting-edge technology with compassionate care. Our team of experienced professionals is dedicated to making every visit comfortable and effective.',
+    
+    // Team members
+    doctor1Name: 'Dr. Michael Roberts',
+    doctor1Role: 'Lead Dentist & Founder',
+    doctor1Desc: '20+ years of experience in restorative and cosmetic dentistry.',
+    doctor2Name: 'Dr. Sarah Mitchell',
+    doctor2Role: 'Orthodontist',
+    doctor2Desc: 'Specialist in Invisalign and traditional braces treatments.',
+    doctor3Name: 'Emma Johnson',
+    doctor3Role: 'Dental Hygienist',
+    doctor3Desc: 'Passionate about preventive care and patient education.',
+    
+    // Specialties
+    implants: 'Implants',
+    cosmetic: 'Cosmetic',
+    invisalign: 'Invisalign',
+    braces: 'Braces',
+    cleaning: 'Cleaning',
+    prevention: 'Prevention',
+    
+    // Stats
+    happyPatients: 'Happy Patients',
+    yearsExperience: 'Years Experience',
+    expertStaff: 'Expert Staff',
+    satisfactionRate: 'Satisfaction Rate',
+    
+    // Mission
+    missionTitle: 'Our Mission',
+    missionPara1: 'We believe everyone deserves access to quality dental care. Our mission is to provide exceptional, personalized treatment in a warm and welcoming environment.',
+    missionPara2: 'From routine cleanings to complex procedures, we use the latest technology and techniques to ensure the best possible outcomes for our patients.',
+    
+    // Features
+    feature1: 'State-of-the-art equipment',
+    feature2: 'Comfortable environment',
+    feature3: 'Personalized care plans',
+    feature4: 'Flexible scheduling',
+  },
+
+  // Footer
+  footer: {
+    ctaTitle: 'Ready for Your Best Smile?',
+    ctaSubtitle: 'Schedule your appointment today and take the first step towards a healthier, more confident smile.',
+    bookAppointment: 'Book Appointment',
+    callNow: 'Call Now',
+    
+    // Brand
+    brandDesc: 'Providing exceptional dental care for the whole family since 2003. Your smile is our priority.',
+    
+    // Quick Links
+    quickLinks: 'Quick Links',
+    home: 'Home',
+    aboutUs: 'About Us',
+    servicesLink: 'Services',
+    bookNow: 'Book Now',
+    
+    // Services
+    servicesTitle: 'Services',
+    generalDentistry: 'General Dentistry',
+    teethWhitening: 'Teeth Whitening',
+    rootCanals: 'Root Canals',
+    emergencyCare: 'Emergency Care',
+    cosmeticDentistry: 'Cosmetic Dentistry',
+    
+    // Contact
+    contactUs: 'Contact Us',
+    address: '123 Dental Avenue\nSuite 100\nNew York, NY 10001',
+    
+    // Hours
+    monFri: 'Mon - Fri: 8:00 AM - 6:00 PM',
+    saturday: 'Saturday: 9:00 AM - 2:00 PM',
+    sunday: 'Sunday: Closed',
+    
+    // Bottom
+    copyright: '© 2024 BrightSmile Dental. All rights reserved.',
+    privacyPolicy: 'Privacy Policy',
+    termsOfService: 'Terms of Service',
+    accessibility: 'Accessibility',
+  },
+
+  // Header
+  header: {
+    home: 'Home',
+    about: 'About',
+    services: 'Services',
+    account: 'Account',
+    adminDashboard: 'Admin Dashboard',
+    myAppointments: 'My Appointments',
+    signIn: 'Sign In',
+    signOut: 'Sign Out',
+    bookAppointment: 'Book Appointment',
+    theme: 'Theme',
+  },
+
+  // Booking (English version)
+  booking: {
+    title: 'Book Appointment',
+    subtitle: 'Book your appointment in simple steps',
+    selectService: 'Select Service',
+    services: {
+      general: 'General Dentistry',
+      whitening: 'Teeth Whitening',
+      rootcanal: 'Root Canal',
+      emergency: 'Emergency Care',
+      crowns: 'Dental Crowns',
+      cosmetic: 'Cosmetic Dentistry',
+    },
+    duration: 'min',
+    selectDate: 'Select Date',
+    pickDate: 'Pick a date',
+    selectTime: 'Select Time',
+    checkingAvailability: 'Checking availability...',
+    noSlotsTitle: 'No slots available for this day',
+    noSlotsDescription: 'All slots are booked. You can join the waitlist or choose another date.',
+    joinWaitlistButton: 'Join Waitlist',
+    bookedSlotsNote: 'Crossed-out times are already booked',
+    yourInfo: 'Your Information',
+    joinWaitlistTitle: 'Join Waitlist',
+    waitlistNote: 'You will join the waitlist for {date}. We will contact you when a slot becomes available.',
+    fullName: 'Full Name',
+    namePlaceholder: 'John Doe',
+    emailAddress: 'Email Address',
+    emailPlaceholder: 'john@example.com',
+    phoneNumber: 'Phone Number',
+    phonePlaceholder: '(123) 456-7890',
+    additionalNotes: 'Additional Notes (Optional)',
+    notesPlaceholder: 'Any concerns or special requests...',
+    appointmentSummary: 'Appointment Summary',
+    waitlistRequest: 'Waitlist Request',
+    service: 'Service:',
+    date: 'Date:',
+    preferredDate: 'Preferred Date:',
+    time: 'Time:',
+    continue: 'Continue',
+    continueToWaitlist: 'Continue to Join',
+    back: 'Back',
+    confirmBooking: 'Confirm Booking',
+    joinWaitlist: 'Join Waitlist',
+    booking: 'Booking...',
+    joining: 'Joining...',
+    done: 'Done',
+    appointmentConfirmed: 'Appointment Confirmed!',
+    thankYou: 'Thank you for booking with BrightSmile Dental.',
+    confirmationSent: 'A confirmation has been sent to {email}',
+    addedToWaitlist: 'Added to Waitlist!',
+    willNotify: 'We will notify you when a slot becomes available.',
+    willContact: 'We will contact you at {email} when a slot becomes available.',
+    slotUnavailable: 'Slot Unavailable',
+    slotJustBooked: 'This slot was just booked by someone else. Please choose a different time.',
+    bookingSuccess: 'Appointment Booked!',
+    bookingSuccessDesc: 'A confirmation has been sent to you.',
+    bookingFailed: 'Booking Failed',
+    tryAgain: 'An error occurred. Please try again.',
+    waitlistSuccess: 'Added to Waitlist!',
+    waitlistSuccessDesc: 'We will contact you when a slot becomes available.',
+    waitlistFailed: 'Failed to join waitlist',
+  },
+
+  // Doctor Profile
+  doctorProfile: {
+    title: 'Doctor Profile',
+    subtitle: 'Update your information and specialty',
+    badgeNumber: 'Medical Badge Number',
+    doctorInfo: 'Doctor Information',
+    completeProfile: 'Complete your profile to appear to patients when booking appointments',
+    specialty: 'Specialty',
+    selectSpecialty: 'Select Specialty',
+    yearsExperience: 'Years of Experience',
+    phone: 'Phone Number',
+    bio: 'About You',
+    bioPlaceholder: 'Write a brief description about your experience and qualifications...',
+    availableForAppointments: 'Available for Appointments',
+    availableDesc: 'When disabled, patients will not be able to select you for new appointments',
+    saveChanges: 'Save Changes',
+    saving: 'Saving...',
+    saved: 'Saved',
+    profileUpdated: 'Profile updated successfully',
+    backToDashboard: 'Back to Dashboard',
+    notDefined: 'Not defined',
+    myProfile: 'My Profile',
+  },
+
+  // Realtime notifications
+  realtime: {
+    newAppointment: 'New Appointment!',
+    statusChanged: 'Appointment Status Changed',
+    appointmentDeleted: 'Appointment Deleted',
+  },
+
+  // Doctor assignment
+  doctorAssignment: {
+    selectDoctor: 'Select Assigned Doctor',
+    assignedDoctor: 'Assigned Doctor',
+    noDoctor: 'No doctor assigned',
+    noDoctorsAvailable: 'No doctors available',
+    loadingDoctors: 'Loading doctors...',
+  },
+
+  // Activity Log
+  activity: {
+    title: 'Activity Log',
+    subtitle: 'Track all changes to user roles',
+    noActivities: 'No activities logged yet',
+    promote: 'Promote',
+    demote: 'Demote',
+    promotedTo: 'promoted',
+    demotedTo: 'demoted',
+    toDoctor: 'to Doctor/Admin',
+    toPatient: 'to Patient',
+  },
+
+  // Admin Dashboard
+  admin: {
+    title: 'Dashboard',
+    subtitle: 'Manage appointments and waitlist',
+    staffManagement: 'Staff Management',
+    total: 'Total',
+    pending: 'Pending',
+    confirmed: 'Confirmed',
+    completed: 'Completed',
+    waitlist: 'Waitlist',
+    appointments: 'Appointments',
+    patients: 'Patients',
+    analytics: 'Analytics',
+    patientHistory: 'Patient History',
+    allServices: 'All Services',
+    clearFilters: 'Clear Filters',
+    filterByDate: 'Filter by Date',
+    filterByService: 'Filter by Service',
+    listView: 'List View',
+    calendarView: 'Calendar View',
+    patientName: 'Patient Name',
+    service: 'Service',
+    dateTime: 'Date & Time',
+    status: 'Status',
+    noAppointments: 'No appointments',
+    statusPending: 'Pending',
+    statusConfirmed: 'Confirmed',
+    statusCompleted: 'Completed',
+    statusCancelled: 'Cancelled',
+    reschedule: 'Reschedule',
+    deleteAppointment: 'Delete Appointment',
+    updateStatus: 'Update Status',
+    sendReminder: 'Send Reminder',
+    notifyWaitlist: 'Notify Waitlist',
+    exportCSV: 'Export CSV',
+    exportPDF: 'Export PDF',
+    printReport: 'Print Report',
+    email: 'Email',
+    phone: 'Phone',
+    totalVisits: 'Total Visits',
+    lastVisit: 'Last Visit',
+    upcomingAppointments: 'Upcoming Appointments',
+    completedAppointments: 'Completed Appointments',
+    cancelledAppointments: 'Cancelled Appointments',
+    doctorNotes: 'Doctor Notes',
+    addNote: 'Add Note',
+    appointmentHistory: 'Appointment History',
+  },
+
+  // Services
+  services: {
+    generalCheckup: 'General Checkup',
+    teethCleaning: 'Teeth Cleaning',
+    teethWhitening: 'Teeth Whitening',
+    dentalImplants: 'Dental Implants',
+    rootCanal: 'Root Canal',
+    bracesOrthodontics: 'Braces/Orthodontics',
+  },
+
+  // Doctor badges/specialties
+  doctorBadges: {
+    seniorDentist: 'Senior Dentist',
+    orthodontist: 'Orthodontist',
+    implantSpecialist: 'Implant Specialist',
+    endodontist: 'Endodontist',
+    prosthodontist: 'Prosthodontist',
+    periodontist: 'Periodontist',
+    oralSurgeon: 'Oral Surgeon',
+    generalDentist: 'General Dentist',
+    pediatricDentist: 'Pediatric Dentist',
+    cosmeticDentist: 'Cosmetic Dentist',
   },
 };
 

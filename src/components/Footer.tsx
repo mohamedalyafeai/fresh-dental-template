@@ -2,22 +2,39 @@ import { useState } from "react";
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BookingModal from "./BookingModal";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Footer = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const { t, isRTL } = useLanguage();
+
+  const quickLinks = [
+    { name: t.footer.home, href: "#home" },
+    { name: t.footer.aboutUs, href: "#aboutus" },
+    { name: t.footer.servicesLink, href: "#services" },
+    { name: t.footer.bookNow, href: "#" },
+  ];
+
+  const services = [
+    t.footer.generalDentistry,
+    t.footer.teethWhitening,
+    t.footer.rootCanals,
+    t.footer.emergencyCare,
+    t.footer.cosmeticDentistry,
+  ];
 
   return (
     <>
-      <footer id="contact" className="bg-foreground text-background">
+      <footer id="contact" className="bg-foreground text-background" dir={isRTL ? 'rtl' : 'ltr'}>
         {/* CTA Section */}
         <div className="container mx-auto px-4">
           <div className="py-16 border-b border-background/10">
             <div className="hero-gradient rounded-3xl p-8 md:p-12 text-center">
               <h2 className="text-2xl md:text-4xl font-bold text-primary-foreground mb-4">
-                Ready for Your Best Smile?
+                {t.footer.ctaTitle}
               </h2>
               <p className="text-primary-foreground/80 text-lg mb-8 max-w-2xl mx-auto">
-                Schedule your appointment today and take the first step towards a healthier, more confident smile.
+                {t.footer.ctaSubtitle}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
@@ -26,14 +43,14 @@ const Footer = () => {
                   className="bg-background text-foreground hover:bg-background/90"
                   onClick={() => setIsBookingOpen(true)}
                 >
-                  Book Appointment
+                  {t.footer.bookAppointment}
                 </Button>
                 <Button
                   variant="outline"
                   size="xl"
                   className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
                 >
-                  Call Now
+                  {t.footer.callNow}
                 </Button>
               </div>
             </div>
@@ -52,7 +69,7 @@ const Footer = () => {
                 <span className="text-xl font-semibold">BrightSmile</span>
               </div>
               <p className="text-background/60 mb-6">
-                Providing exceptional dental care for the whole family since 2003. Your smile is our priority.
+                {t.footer.brandDesc}
               </p>
               <div className="flex gap-4">
                 <a href="#" className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center hover:bg-background/20 transition-colors">
@@ -72,12 +89,12 @@ const Footer = () => {
 
             {/* Quick Links */}
             <div>
-              <h3 className="font-semibold text-lg mb-6">Quick Links</h3>
+              <h3 className="font-semibold text-lg mb-6">{t.footer.quickLinks}</h3>
               <ul className="space-y-4">
-                {["Home", "About Us", "Services", "Book Now"].map((link) => (
-                  <li key={link}>
-                    <a href={link === "Book Now" ? "#" : `#${link.toLowerCase().replace(" ", "")}`} className="text-background/60 hover:text-background transition-colors">
-                      {link}
+                {quickLinks.map((link) => (
+                  <li key={link.name}>
+                    <a href={link.href} className="text-background/60 hover:text-background transition-colors">
+                      {link.name}
                     </a>
                   </li>
                 ))}
@@ -86,9 +103,9 @@ const Footer = () => {
 
             {/* Services */}
             <div>
-              <h3 className="font-semibold text-lg mb-6">Services</h3>
+              <h3 className="font-semibold text-lg mb-6">{t.footer.servicesTitle}</h3>
               <ul className="space-y-4">
-                {["General Dentistry", "Teeth Whitening", "Root Canals", "Emergency Care", "Cosmetic Dentistry"].map((service) => (
+                {services.map((service) => (
                   <li key={service}>
                     <a href="#services" className="text-background/60 hover:text-background transition-colors">
                       {service}
@@ -100,34 +117,32 @@ const Footer = () => {
 
             {/* Contact Info */}
             <div>
-              <h3 className="font-semibold text-lg mb-6">Contact Us</h3>
+              <h3 className="font-semibold text-lg mb-6">{t.footer.contactUs}</h3>
               <ul className="space-y-4">
-                <li className="flex items-start gap-3">
+                <li className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
                   <MapPin className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                  <span className="text-background/60">
-                    123 Dental Avenue<br />
-                    Suite 100<br />
-                    New York, NY 10001
+                  <span className="text-background/60 whitespace-pre-line">
+                    {t.footer.address}
                   </span>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Phone className="w-5 h-5 text-accent flex-shrink-0" />
                   <a href="tel:+12345678900" className="text-background/60 hover:text-background transition-colors">
                     +1 (234) 567-8900
                   </a>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Mail className="w-5 h-5 text-accent flex-shrink-0" />
                   <a href="mailto:info@brightsmile.com" className="text-background/60 hover:text-background transition-colors">
                     info@brightsmile.com
                   </a>
                 </li>
-                <li className="flex items-start gap-3">
+                <li className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
                   <Clock className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
                   <div className="text-background/60">
-                    <p>Mon - Fri: 8:00 AM - 6:00 PM</p>
-                    <p>Saturday: 9:00 AM - 2:00 PM</p>
-                    <p>Sunday: Closed</p>
+                    <p>{t.footer.monFri}</p>
+                    <p>{t.footer.saturday}</p>
+                    <p>{t.footer.sunday}</p>
                   </div>
                 </li>
               </ul>
@@ -140,17 +155,17 @@ const Footer = () => {
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-background/60 text-sm">
-                © 2024 BrightSmile Dental. All rights reserved.
+                {t.footer.copyright}
               </p>
               <div className="flex gap-6 text-sm">
                 <a href="#" className="text-background/60 hover:text-background transition-colors">
-                  Privacy Policy
+                  {t.footer.privacyPolicy}
                 </a>
                 <a href="#" className="text-background/60 hover:text-background transition-colors">
-                  Terms of Service
+                  {t.footer.termsOfService}
                 </a>
                 <a href="#" className="text-background/60 hover:text-background transition-colors">
-                  Accessibility
+                  {t.footer.accessibility}
                 </a>
               </div>
             </div>

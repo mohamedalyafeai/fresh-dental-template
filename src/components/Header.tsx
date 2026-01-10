@@ -5,6 +5,8 @@ import { Phone, Menu, X, Shield, User, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import BookingModal from "./BookingModal";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageToggle } from "./LanguageToggle";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,16 +19,17 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
+  const { t, isRTL } = useLanguage();
 
   const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "About", href: "#about" },
-    { name: "Services", href: "#services" },
+    { name: t.header.home, href: "#home" },
+    { name: t.header.about, href: "#about" },
+    { name: t.header.services, href: "#services" },
   ];
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
@@ -54,6 +57,7 @@ const Header = () => {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
+              <LanguageToggle />
               <ThemeToggle />
               
               <a href="tel:+12345678900" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-muted/50">
@@ -66,7 +70,7 @@ const Header = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="default" className="gap-2">
                       <User className="w-4 h-4" />
-                      Account
+                      {t.header.account}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -75,7 +79,7 @@ const Header = () => {
                         <DropdownMenuItem asChild>
                           <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
                             <Shield className="w-4 h-4" />
-                            Admin Dashboard
+                            {t.header.adminDashboard}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -84,12 +88,12 @@ const Header = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/portal" className="flex items-center gap-2 cursor-pointer">
                         <User className="w-4 h-4" />
-                        My Appointments
+                        {t.header.myAppointments}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => signOut()} className="text-destructive cursor-pointer">
-                      Sign Out
+                      {t.header.signOut}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -97,7 +101,7 @@ const Header = () => {
                 <Link to="/auth?role=patient">
                   <Button variant="outline" size="default" className="gap-2">
                     <User className="w-4 h-4" />
-                    Sign In
+                    {t.header.signIn}
                   </Button>
                 </Link>
               )}
@@ -107,7 +111,7 @@ const Header = () => {
                 size="default" 
                 onClick={() => setIsBookingOpen(true)}
               >
-                Book Appointment
+                {t.header.bookAppointment}
               </Button>
             </div>
 
@@ -137,8 +141,11 @@ const Header = () => {
                 ))}
                 <div className="pt-4 flex flex-col gap-3 border-t border-border/50 mt-2">
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground font-medium">Theme</span>
-                    <ThemeToggle />
+                    <span className="text-muted-foreground font-medium">{t.header.theme}</span>
+                    <div className="flex gap-2">
+                      <LanguageToggle />
+                      <ThemeToggle />
+                    </div>
                   </div>
                   
                   <a href="tel:+12345678900" className="flex items-center gap-2 text-muted-foreground py-2">
@@ -152,25 +159,25 @@ const Header = () => {
                         <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
                           <Button variant="outline" size="lg" className="w-full gap-2">
                             <Shield className="w-4 h-4" />
-                            Admin Dashboard
+                            {t.header.adminDashboard}
                           </Button>
                         </Link>
                       )}
                       <Link to="/portal" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="outline" size="lg" className="w-full gap-2">
                           <User className="w-4 h-4" />
-                          My Appointments
+                          {t.header.myAppointments}
                         </Button>
                       </Link>
                       <Button variant="ghost" size="lg" className="w-full text-destructive" onClick={() => signOut()}>
-                        Sign Out
+                        {t.header.signOut}
                       </Button>
                     </>
                   ) : (
                     <Link to="/auth?role=patient" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="outline" size="lg" className="w-full gap-2">
                         <User className="w-4 h-4" />
-                        Sign In
+                        {t.header.signIn}
                       </Button>
                     </Link>
                   )}
@@ -180,7 +187,7 @@ const Header = () => {
                     size="lg" 
                     onClick={() => { setIsBookingOpen(true); setIsMenuOpen(false); }}
                   >
-                    Book Appointment
+                    {t.header.bookAppointment}
                   </Button>
                 </div>
               </nav>
