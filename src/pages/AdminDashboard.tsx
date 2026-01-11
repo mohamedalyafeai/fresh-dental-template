@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { patientNoteSchema } from '@/lib/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -308,6 +309,17 @@ const AdminDashboard = () => {
   const savePatientNote = async () => {
     if (!selectedPatient || !newNote.trim()) return;
     
+    // Validate note content
+    const result = patientNoteSchema.safeParse({ note_content: newNote.trim() });
+    if (!result.success) {
+      toast({
+        title: 'Validation Error',
+        description: result.error.errors[0]?.message || 'Invalid note content',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsSavingNote(true);
     try {
       const { error } = await supabase
@@ -315,7 +327,7 @@ const AdminDashboard = () => {
         .insert({
           patient_email: selectedPatient.email,
           patient_name: selectedPatient.name,
-          note_content: newNote.trim(),
+          note_content: result.data.note_content,
           created_by: user?.id
         });
 
