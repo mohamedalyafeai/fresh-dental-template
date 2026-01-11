@@ -1,9 +1,7 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,21 +13,92 @@ interface NotifyRequest {
   availableSlots: string[]; // Array of available time slots
 }
 
+// Date validation regex (YYYY-MM-DD)
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Check if user is admin
+    const { data: hasAdminRole } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin"
+    });
+
+    if (!hasAdminRole) {
+      return new Response(
+        JSON.stringify({ error: "Admin access required" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const { date, availableSlots }: NotifyRequest = await req.json();
+
+    // Validate inputs
+    if (!date || typeof date !== "string" || !dateRegex.test(date)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid date format. Use YYYY-MM-DD" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!availableSlots || !Array.isArray(availableSlots) || availableSlots.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Invalid available slots" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate each slot
+    for (const slot of availableSlots) {
+      if (typeof slot !== "string" || slot.length > 20) {
+        return new Response(
+          JSON.stringify({ error: "Invalid slot format" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
     
     console.log("Notifying waitlist patients for date:", date);
     console.log("Available slots:", availableSlots);
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Use service role for database operations
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get all patients on the waitlist for this date
-    const { data: waitlistEntries, error: fetchError } = await supabase
+    const { data: waitlistEntries, error: fetchError } = await supabaseAdmin
       .from("waiting_list")
       .select("*")
       .eq("preferred_date", date)
@@ -50,9 +119,17 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Found ${waitlistEntries.length} patients to notify`);
 
-    const slotsHtml = availableSlots.map(slot => `<li style="padding: 8px 0; color: #333;">${slot}</li>`).join("");
+    // Sanitize slots for HTML
+    const slotsHtml = availableSlots.map(slot => {
+      const sanitizedSlot = slot.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return `<li style="padding: 8px 0; color: #333;">${sanitizedSlot}</li>`;
+    }).join("");
     
     const notifications = waitlistEntries.map(async (entry) => {
+      // Sanitize patient name for HTML
+      const sanitizedName = entry.patient_name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const sanitizedService = entry.service.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
       const emailHtml = `
         <!DOCTYPE html>
         <html>
@@ -79,7 +156,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p>A slot has opened up for your preferred date</p>
             </div>
             <div class="content">
-              <p>Dear <strong>${entry.patient_name}</strong>,</p>
+              <p>Dear <strong>${sanitizedName}</strong>,</p>
               <p>We're excited to let you know that appointment slots have become available on your preferred date!</p>
               
               <div class="slots-box">
@@ -89,7 +166,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </ul>
               </div>
               
-              <p>You were on the waiting list for: <strong>${entry.service}</strong></p>
+              <p>You were on the waiting list for: <strong>${sanitizedService}</strong></p>
               <p style="color: #DC2626; font-weight: 500;">⚡ These slots fill up quickly! Book now to secure your appointment.</p>
               
               <p style="text-align: center;">
@@ -133,7 +210,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`Successfully sent email to ${entry.patient_email}`);
         
         // Update the waitlist entry to mark as notified
-        await supabase
+        await supabaseAdmin
           .from("waiting_list")
           .update({ status: "notified" })
           .eq("id", entry.id);

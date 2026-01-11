@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { t } from "@/lib/translations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { bookingFormSchema } from "@/lib/validation";
 
 const services = [
   { id: "general", name: t.booking.services.general, duration: "30", icon: "🦷" },
@@ -48,12 +49,30 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     phone: "",
     notes: ""
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isWaitlistConfirmed, setIsWaitlistConfirmed] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const { toast } = useToast();
+
+  // Validate form data
+  const validateForm = (): boolean => {
+    const result = bookingFormSchema.safeParse(formData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          errors[err.path[0] as string] = err.message;
+        }
+      });
+      setFormErrors(errors);
+      return false;
+    }
+    setFormErrors({});
+    return true;
+  };
 
   // Auto-fill user data from profile
   useEffect(() => {
@@ -184,6 +203,16 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const handleJoinWaitlist = async () => {
     if (!selectedService || !selectedDate) return;
     
+    // Validate form before submission
+    if (!validateForm()) {
+      toast({
+        title: t.common?.error || "Error",
+        description: "Please fix the form errors",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -217,6 +246,16 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
   const handleSubmit = async () => {
     if (!selectedService || !selectedDate || !selectedTime) return;
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      toast({
+        title: t.common?.error || "Error",
+        description: "Please fix the form errors",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     
@@ -587,6 +626,9 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   className="h-12 rounded-xl text-right"
                   dir="rtl"
                 />
+                {formErrors.name && (
+                  <p className="text-sm text-destructive mt-1 text-right">{formErrors.name}</p>
+                )}
               </div>
 
               <div>
@@ -602,6 +644,9 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   className="h-12 rounded-xl text-left"
                   dir="ltr"
                 />
+                {formErrors.email && (
+                  <p className="text-sm text-destructive mt-1 text-right">{formErrors.email}</p>
+                )}
               </div>
 
               <div>
@@ -617,6 +662,9 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   className="h-12 rounded-xl text-left"
                   dir="ltr"
                 />
+                {formErrors.phone && (
+                  <p className="text-sm text-destructive mt-1 text-right">{formErrors.phone}</p>
+                )}
               </div>
 
               <div>
@@ -631,7 +679,11 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   rows={3}
                   className="rounded-xl text-right"
                   dir="rtl"
+                  maxLength={500}
                 />
+                {formErrors.notes && (
+                  <p className="text-sm text-destructive mt-1 text-right">{formErrors.notes}</p>
+                )}
               </div>
             </div>
 

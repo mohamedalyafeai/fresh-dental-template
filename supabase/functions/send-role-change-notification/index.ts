@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
@@ -14,15 +15,92 @@ interface RoleChangeRequest {
   adminName: string;
 }
 
+// Email validation regex
+const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Check if user is admin
+    const { data: hasAdminRole } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin"
+    });
+
+    if (!hasAdminRole) {
+      return new Response(
+        JSON.stringify({ error: "Admin access required" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const { userEmail, userName, actionType, adminName }: RoleChangeRequest = await req.json();
 
+    // Validate inputs
+    if (!userEmail || typeof userEmail !== "string" || !emailRegex.test(userEmail)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!userName || typeof userName !== "string" || userName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid user name" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!actionType || (actionType !== "promote" && actionType !== "demote")) {
+      return new Response(
+        JSON.stringify({ error: "Invalid action type" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!adminName || typeof adminName !== "string" || adminName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid admin name" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     console.log(`Sending role change notification to: ${userEmail}, action: ${actionType}`);
+
+    // Sanitize inputs for HTML
+    const sanitizedUserName = (userName || "User").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedAdminName = adminName.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     const isPromotion = actionType === 'promote';
     const subject = isPromotion 
@@ -49,11 +127,11 @@ const handler = async (req: Request): Promise<Response> => {
             <h1>${isPromotion ? '🎉 Congratulations!' : '📋 Role Update'}</h1>
           </div>
           <div class="content">
-            <p>Dear ${userName || 'User'},</p>
+            <p>Dear ${sanitizedUserName},</p>
             
             ${isPromotion ? `
               <div class="highlight-box">
-                <p><strong>Great news!</strong> You have been promoted to <strong>Doctor/Admin</strong> by ${adminName}.</p>
+                <p><strong>Great news!</strong> You have been promoted to <strong>Doctor/Admin</strong> by ${sanitizedAdminName}.</p>
               </div>
               <p>As a Doctor/Admin, you now have access to:</p>
               <ul>
@@ -66,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p>Log in to access your new capabilities and start managing the clinic!</p>
             ` : `
               <div class="highlight-box">
-                <p>Your account role has been changed to <strong>Patient</strong> by ${adminName}.</p>
+                <p>Your account role has been changed to <strong>Patient</strong> by ${sanitizedAdminName}.</p>
               </div>
               <p>As a Patient, you can:</p>
               <ul>

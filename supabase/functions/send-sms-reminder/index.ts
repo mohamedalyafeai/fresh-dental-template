@@ -10,6 +10,9 @@ const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
 const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
 const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
 
+// Phone validation regex
+const phoneRegex = /^[+]?[0-9\s()-]{10,20}$/;
+
 async function sendSMS(to: string, body: string): Promise<any> {
   const url = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
   
@@ -41,9 +44,50 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Check if user is admin
+    const { data: hasAdminRole } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin"
+    });
+
+    if (!hasAdminRole) {
+      return new Response(
+        JSON.stringify({ error: "Admin access required" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Use service role for database operations
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Calculate the date range for appointments 24 hours from now
     const now = new Date();
@@ -53,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Checking for appointments on:", tomorrowDate);
 
     // Get all appointments scheduled for tomorrow that haven't been reminded
-    const { data: appointments, error } = await supabase
+    const { data: appointments, error } = await supabaseAdmin
       .from("appointments")
       .select("*")
       .eq("appointment_date", tomorrowDate)
@@ -70,14 +114,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (const appointment of appointments || []) {
       try {
-        const message = `Hi ${appointment.patient_name}! This is a reminder from BrightSmile Dental. You have an appointment scheduled for tomorrow, ${appointment.appointment_date} at ${appointment.appointment_time}. Please arrive 10 minutes early. Reply STOP to unsubscribe.`;
+        // Validate phone number
+        if (!phoneRegex.test(appointment.patient_phone)) {
+          console.log(`Invalid phone number for appointment ${appointment.id}`);
+          results.push({ id: appointment.id, status: "skipped", error: "Invalid phone number" });
+          continue;
+        }
+
+        // Sanitize patient name
+        const sanitizedName = appointment.patient_name.substring(0, 100);
+
+        const message = `Hi ${sanitizedName}! This is a reminder from BrightSmile Dental. You have an appointment scheduled for tomorrow, ${appointment.appointment_date} at ${appointment.appointment_time}. Please arrive 10 minutes early. Reply STOP to unsubscribe.`;
         
         console.log(`Sending reminder to ${appointment.patient_phone}`);
         
         await sendSMS(appointment.patient_phone, message);
 
         // Mark as reminded
-        await supabase
+        await supabaseAdmin
           .from("appointments")
           .update({ reminder_sent: new Date().toISOString() })
           .eq("id", appointment.id);

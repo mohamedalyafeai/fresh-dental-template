@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
@@ -15,15 +16,86 @@ interface EmailRequest {
   appointmentTime: string;
 }
 
+// Email validation regex
+const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const { patientName, patientEmail, service, appointmentDate, appointmentTime }: EmailRequest = await req.json();
 
+    // Validate inputs
+    if (!patientName || typeof patientName !== "string" || patientName.length < 2 || patientName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid patient name" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!patientEmail || typeof patientEmail !== "string" || !emailRegex.test(patientEmail)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!service || typeof service !== "string" || service.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid service" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!appointmentDate || typeof appointmentDate !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Invalid appointment date" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!appointmentTime || typeof appointmentTime !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Invalid appointment time" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     console.log("Sending confirmation email to:", patientEmail);
+
+    // Sanitize inputs for HTML
+    const sanitizedName = patientName.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedService = service.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedDate = appointmentDate.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedTime = appointmentTime.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -49,21 +121,21 @@ const handler = async (req: Request): Promise<Response> => {
             <h1>✓ Appointment Confirmed!</h1>
           </div>
           <div class="content">
-            <p>Dear ${patientName},</p>
+            <p>Dear ${sanitizedName},</p>
             <p>Thank you for booking with BrightSmile Dental. Your appointment has been confirmed.</p>
             
             <div class="details">
               <div class="detail-row">
                 <span class="label">Service:</span>
-                <span class="value">${service}</span>
+                <span class="value">${sanitizedService}</span>
               </div>
               <div class="detail-row">
                 <span class="label">Date:</span>
-                <span class="value">${appointmentDate}</span>
+                <span class="value">${sanitizedDate}</span>
               </div>
               <div class="detail-row">
                 <span class="label">Time:</span>
-                <span class="value">${appointmentTime}</span>
+                <span class="value">${sanitizedTime}</span>
               </div>
             </div>
             
