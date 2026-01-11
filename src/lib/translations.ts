@@ -282,6 +282,12 @@ export const ar = {
     waitlistSuccess: 'تمت الإضافة لقائمة الانتظار!',
     waitlistSuccessDesc: 'سنتواصل معك عند توفر موعد.',
     waitlistFailed: 'فشل الانضمام لقائمة الانتظار',
+    
+    // Login required
+    loginRequired: 'تسجيل الدخول مطلوب',
+    loginRequiredDesc: 'يجب تسجيل الدخول أولاً لحجز موعد',
+    loginToBook: 'تسجيل الدخول للحجز',
+    createAccount: 'إنشاء حساب',
   },
   // Hero Section
   hero: {
@@ -1000,6 +1006,12 @@ export const en = {
     waitlistSuccess: 'Added to Waitlist!',
     waitlistSuccessDesc: 'We will contact you when a slot becomes available.',
     waitlistFailed: 'Failed to join waitlist',
+    
+    // Login required
+    loginRequired: 'Login Required',
+    loginRequiredDesc: 'You must log in first to book an appointment',
+    loginToBook: 'Login to Book',
+    createAccount: 'Create Account',
   },
 
   // Doctor Profile

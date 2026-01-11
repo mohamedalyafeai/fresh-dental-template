@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2, ListPlus } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2, ListPlus, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { t } from "@/lib/translations";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const services = [
   { id: "general", name: t.booking.services.general, duration: "30", icon: "🦷" },
@@ -34,6 +36,8 @@ interface BookingModalProps {
 }
 
 const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -50,6 +54,48 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const { toast } = useToast();
+
+  const handleLoginRedirect = () => {
+    onClose();
+    navigate('/auth');
+  };
+
+  // Show login required screen if user is not authenticated
+  if (!user) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <div className="text-center py-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/25">
+              <LogIn className="w-10 h-10 text-primary-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">{t.booking.loginRequired}</h2>
+            <p className="text-muted-foreground mb-6">
+              {t.booking.loginRequiredDesc}
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button 
+                size="lg" 
+                onClick={handleLoginRedirect}
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity w-full"
+              >
+                <LogIn className="w-4 h-4 ml-2" />
+                {t.booking.loginToBook}
+              </Button>
+              <Button 
+                variant="outline"
+                size="lg" 
+                onClick={handleLoginRedirect}
+                className="w-full"
+              >
+                {t.booking.createAccount}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Fetch booked slots when date changes
   useEffect(() => {
