@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
@@ -18,15 +19,96 @@ interface NotificationRequest {
   newTime?: string;
 }
 
+// Email validation regex
+const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Check if user is admin
+    const { data: hasAdminRole } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin"
+    });
+
+    if (!hasAdminRole) {
+      return new Response(
+        JSON.stringify({ error: "Admin access required" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const { type, patientName, patientEmail, service, originalDate, originalTime, newDate, newTime }: NotificationRequest = await req.json();
 
+    // Validate inputs
+    if (!type || (type !== "reschedule" && type !== "cancel")) {
+      return new Response(
+        JSON.stringify({ error: "Invalid notification type" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!patientName || typeof patientName !== "string" || patientName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid patient name" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!patientEmail || typeof patientEmail !== "string" || !emailRegex.test(patientEmail)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!service || typeof service !== "string" || service.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid service" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     console.log(`Sending ${type} notification to:`, patientEmail);
+
+    // Sanitize inputs for HTML
+    const sanitizedName = patientName.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedService = service.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedOriginalDate = (originalDate || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedOriginalTime = (originalTime || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedNewDate = (newDate || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sanitizedNewTime = (newTime || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     let subject: string;
     let emailHtml: string;
@@ -57,18 +139,18 @@ const handler = async (req: Request): Promise<Response> => {
               <h1>📅 Appointment Rescheduled</h1>
             </div>
             <div class="content">
-              <p>Dear ${patientName},</p>
+              <p>Dear ${sanitizedName},</p>
               <p>Your appointment at BrightSmile Dental has been rescheduled.</p>
               
               <div class="details">
                 <div class="detail-row">
-                  <strong>Service:</strong> ${service}
+                  <strong>Service:</strong> ${sanitizedService}
                 </div>
                 <div class="detail-row">
-                  <strong>Original Time:</strong> <span class="old-time">${originalDate} at ${originalTime}</span>
+                  <strong>Original Time:</strong> <span class="old-time">${sanitizedOriginalDate} at ${sanitizedOriginalTime}</span>
                 </div>
                 <div class="detail-row">
-                  <strong>New Time:</strong> <span class="new-time">${newDate} at ${newTime}</span>
+                  <strong>New Time:</strong> <span class="new-time">${sanitizedNewDate} at ${sanitizedNewTime}</span>
                 </div>
               </div>
               
@@ -108,15 +190,15 @@ const handler = async (req: Request): Promise<Response> => {
               <h1>❌ Appointment Cancelled</h1>
             </div>
             <div class="content">
-              <p>Dear ${patientName},</p>
+              <p>Dear ${sanitizedName},</p>
               <p>We regret to inform you that your appointment at BrightSmile Dental has been cancelled.</p>
               
               <div class="details">
                 <div class="detail-row">
-                  <strong>Service:</strong> ${service}
+                  <strong>Service:</strong> ${sanitizedService}
                 </div>
                 <div class="detail-row">
-                  <strong>Originally scheduled:</strong> ${originalDate} at ${originalTime}
+                  <strong>Originally scheduled:</strong> ${sanitizedOriginalDate} at ${sanitizedOriginalTime}
                 </div>
               </div>
               
