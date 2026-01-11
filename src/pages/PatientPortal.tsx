@@ -51,6 +51,7 @@ const PatientPortal = () => {
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAllPast, setShowAllPast] = useState(false);
 
   // Reschedule state
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
@@ -222,8 +223,10 @@ const PatientPortal = () => {
     apt => apt.status !== 'cancelled' && apt.status !== 'completed' && new Date(apt.appointment_date) >= new Date()
   );
   const pastAppointments = appointments.filter(
-    apt => apt.status === 'completed' || new Date(apt.appointment_date) < new Date()
-  );
+    apt => apt.status === 'completed' || apt.status === 'cancelled' || new Date(apt.appointment_date) < new Date()
+  ).sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
+  
+  const displayedPastAppointments = showAllPast ? pastAppointments : pastAppointments.slice(0, 5);
 
   if (authLoading) {
     return (
@@ -347,20 +350,38 @@ const PatientPortal = () => {
             </div>
 
             {/* Past Appointments */}
-            {pastAppointments.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4 text-muted-foreground">
-                  {t.portal.pastAppointments} ({pastAppointments.length})
+            <div>
+              <div className={`flex items-center justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <h2 className={`text-xl font-semibold text-muted-foreground flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <CalendarIcon2 className="h-5 w-5" />
+                  {t.portal.appointmentHistory} ({pastAppointments.length})
                 </h2>
-                <div className="grid gap-4 opacity-70">
-                  {pastAppointments.slice(0, 5).map(appointment => (
-                    <Card key={appointment.id}>
+                {pastAppointments.length > 5 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllPast(!showAllPast)}
+                  >
+                    {showAllPast ? t.portal.showLess : t.portal.showAll}
+                  </Button>
+                )}
+              </div>
+              {pastAppointments.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    {t.portal.noPastAppointments}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-3">
+                  {displayedPastAppointments.map(appointment => (
+                    <Card key={appointment.id} className="opacity-80 hover:opacity-100 transition-opacity">
                       <CardContent className="p-4">
                         <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <div className={isRTL ? 'text-right' : ''}>
                             <h3 className="font-medium">{appointment.service}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {format(new Date(appointment.appointment_date), 'MMMM d, yyyy')} at {appointment.appointment_time}
+                              {format(new Date(appointment.appointment_date), 'MMMM d, yyyy')} • {appointment.appointment_time}
                             </p>
                           </div>
                           <Badge variant={getStatusBadgeVariant(appointment.status)}>
@@ -371,8 +392,8 @@ const PatientPortal = () => {
                     </Card>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </main>

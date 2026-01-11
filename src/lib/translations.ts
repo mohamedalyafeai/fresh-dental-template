@@ -481,6 +481,10 @@ export const ar = {
     upcomingAppointments: 'المواعيد القادمة',
     noUpcoming: 'لا توجد مواعيد قادمة',
     pastAppointments: 'المواعيد السابقة',
+    noPastAppointments: 'لا توجد مواعيد سابقة',
+    showAll: 'عرض الكل',
+    showLess: 'عرض أقل',
+    appointmentHistory: 'سجل المواعيد',
     reschedule: 'إعادة الجدولة',
     cancel: 'إلغاء',
     
@@ -839,6 +843,10 @@ export const en = {
     upcomingAppointments: 'Upcoming Appointments',
     noUpcoming: 'No upcoming appointments',
     pastAppointments: 'Past Appointments',
+    noPastAppointments: 'No past appointments',
+    showAll: 'Show All',
+    showLess: 'Show Less',
+    appointmentHistory: 'Appointment History',
     reschedule: 'Reschedule',
     cancel: 'Cancel',
     

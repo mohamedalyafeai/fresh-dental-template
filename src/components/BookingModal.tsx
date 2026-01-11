@@ -55,6 +55,39 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const { toast } = useToast();
 
+  // Auto-fill user data from profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setFormData(prev => ({
+          ...prev,
+          name: profile?.full_name || user.user_metadata?.full_name || "",
+          email: profile?.email || user.email || "",
+        }));
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        // Fallback to user metadata
+        setFormData(prev => ({
+          ...prev,
+          name: user.user_metadata?.full_name || "",
+          email: user.email || "",
+        }));
+      }
+    };
+
+    if (isOpen && user) {
+      fetchUserProfile();
+    }
+  }, [isOpen, user]);
+
   const handleLoginRedirect = () => {
     onClose();
     navigate('/auth');
