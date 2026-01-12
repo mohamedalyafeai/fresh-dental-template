@@ -256,6 +256,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_full_doctor_profile: {
+        Args: { doctor_user_id: string }
+        Returns: boolean
+      }
       get_user_email: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
