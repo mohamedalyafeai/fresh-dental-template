@@ -107,6 +107,41 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     }
   }, [isOpen, user]);
 
+  // Fetch booked slots when date changes - MUST be before any conditional returns
+  useEffect(() => {
+    const fetchBookedSlots = async () => {
+      if (!selectedDate) {
+        setBookedSlots([]);
+        return;
+      }
+
+      setIsLoadingSlots(true);
+      try {
+        const { data, error } = await supabase
+          .from("appointments")
+          .select("appointment_time")
+          .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
+          .neq("status", "cancelled");
+
+        if (error) throw error;
+
+        const slots = data?.map(apt => apt.appointment_time) || [];
+        setBookedSlots(slots);
+        
+        if (selectedTime && slots.includes(selectedTime)) {
+          setSelectedTime(null);
+        }
+      } catch (error) {
+        console.error("Error fetching booked slots:", error);
+        setBookedSlots([]);
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+
+    fetchBookedSlots();
+  }, [selectedDate]);
+
   const handleLoginRedirect = () => {
     onClose();
     navigate('/auth');
@@ -148,41 +183,6 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
       </Dialog>
     );
   }
-
-  // Fetch booked slots when date changes
-  useEffect(() => {
-    const fetchBookedSlots = async () => {
-      if (!selectedDate) {
-        setBookedSlots([]);
-        return;
-      }
-
-      setIsLoadingSlots(true);
-      try {
-        const { data, error } = await supabase
-          .from("appointments")
-          .select("appointment_time")
-          .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
-          .neq("status", "cancelled");
-
-        if (error) throw error;
-
-        const slots = data?.map(apt => apt.appointment_time) || [];
-        setBookedSlots(slots);
-        
-        if (selectedTime && slots.includes(selectedTime)) {
-          setSelectedTime(null);
-        }
-      } catch (error) {
-        console.error("Error fetching booked slots:", error);
-        setBookedSlots([]);
-      } finally {
-        setIsLoadingSlots(false);
-      }
-    };
-
-    fetchBookedSlots();
-  }, [selectedDate]);
 
   const resetForm = () => {
     setStep(1);
