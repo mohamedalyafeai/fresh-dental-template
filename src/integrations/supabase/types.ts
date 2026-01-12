@@ -253,7 +253,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_doctor_profiles: {
+        Row: {
+          avatar_url: string | null
+          badge_number: string | null
+          bio: string | null
+          created_at: string | null
+          id: string | null
+          is_available: boolean | null
+          specialty: string | null
+          updated_at: string | null
+          user_id: string | null
+          years_experience: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          badge_number?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_available?: boolean | null
+          specialty?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          years_experience?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          badge_number?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_available?: boolean | null
+          specialty?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_view_full_doctor_profile: {
