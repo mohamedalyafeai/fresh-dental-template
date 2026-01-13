@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Phone, Menu, X, Shield, User, Sparkles } from "lucide-react";
+import { Phone, Menu, X, Shield, User, Sparkles, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import BookingModal from "./BookingModal";
 import { ThemeToggle } from "./ThemeToggle";
@@ -25,7 +25,7 @@ const Header = () => {
     { name: t.header.home, href: "#home" },
     { name: t.header.about, href: "#about" },
     { name: t.header.services, href: "#services" },
-    { name: t.header.settings, href: "#settings" },
+    { name: t.header.contact, href: "#contact" },
   ];
 
   return (
@@ -90,6 +90,12 @@ const Header = () => {
                       <Link to="/portal" className="flex items-center gap-2 cursor-pointer">
                         <User className="w-4 h-4" />
                         {t.header.myAppointments}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+                        <Settings className="w-4 h-4" />
+                        {t.header.settings}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -170,17 +176,31 @@ const Header = () => {
                           {t.header.myAppointments}
                         </Button>
                       </Link>
+                      <Link to="/settings" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="lg" className="w-full gap-2">
+                          <Settings className="w-4 h-4" />
+                          {t.header.settings}
+                        </Button>
+                      </Link>
                       <Button variant="ghost" size="lg" className="w-full text-destructive" onClick={() => signOut()}>
                         {t.header.signOut}
                       </Button>
                     </>
                   ) : (
-                    <Link to="/auth?role=patient" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" size="lg" className="w-full gap-2">
-                        <User className="w-4 h-4" />
-                        {t.header.signIn}
-                      </Button>
-                    </Link>
+                    <>
+                      <Link to="/settings" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="lg" className="w-full gap-2">
+                          <Settings className="w-4 h-4" />
+                          {t.header.settings}
+                        </Button>
+                      </Link>
+                      <Link to="/auth?role=patient" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="lg" className="w-full gap-2">
+                          <User className="w-4 h-4" />
+                          {t.header.signIn}
+                        </Button>
+                      </Link>
+                    </>
                   )}
                   
                   <Button 
