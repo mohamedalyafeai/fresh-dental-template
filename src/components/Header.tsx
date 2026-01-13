@@ -25,6 +25,7 @@ const Header = () => {
     { name: t.header.home, href: "#home" },
     { name: t.header.about, href: "#about" },
     { name: t.header.services, href: "#services" },
+    { name: t.header.settings, href: "#settings" },
   ];
 
   return (

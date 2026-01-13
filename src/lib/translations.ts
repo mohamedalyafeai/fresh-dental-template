@@ -591,6 +591,7 @@ export const ar = {
     home: 'الرئيسية',
     about: 'من نحن',
     services: 'الخدمات',
+    settings: 'الإعدادات',
     account: 'الحساب',
     adminDashboard: 'لوحة التحكم',
     myAppointments: 'مواعيدي',
@@ -598,6 +599,25 @@ export const ar = {
     signOut: 'تسجيل الخروج',
     bookAppointment: 'احجز موعداً',
     theme: 'المظهر',
+  },
+
+  // Settings Section
+  settings: {
+    badge: 'الإعدادات',
+    title: 'تخصيص',
+    titleHighlight: 'تجربتك',
+    subtitle: 'قم بتخصيص إعدادات الموقع حسب تفضيلاتك الشخصية',
+    language: 'اللغة',
+    languageDesc: 'اختر لغة العرض المفضلة',
+    theme: 'المظهر',
+    themeDesc: 'اختر وضع العرض الفاتح أو الداكن',
+    light: 'فاتح',
+    dark: 'داكن',
+    notifications: 'الإشعارات',
+    notificationsDesc: 'تلقي إشعارات حول المواعيد والتحديثات',
+    privacy: 'الخصوصية',
+    privacyDesc: 'إدارة إعدادات الخصوصية والبيانات',
+    manage: 'إدارة',
   },
 };
 
@@ -943,6 +963,7 @@ export const en = {
     home: 'Home',
     about: 'About',
     services: 'Services',
+    settings: 'Settings',
     account: 'Account',
     adminDashboard: 'Admin Dashboard',
     myAppointments: 'My Appointments',
@@ -1146,6 +1167,25 @@ export const en = {
     generalDentist: 'General Dentist',
     pediatricDentist: 'Pediatric Dentist',
     cosmeticDentist: 'Cosmetic Dentist',
+  },
+
+  // Settings Section
+  settings: {
+    badge: 'Settings',
+    title: 'Customize',
+    titleHighlight: 'Your Experience',
+    subtitle: 'Customize the website settings according to your personal preferences',
+    language: 'Language',
+    languageDesc: 'Choose your preferred display language',
+    theme: 'Theme',
+    themeDesc: 'Choose light or dark display mode',
+    light: 'Light',
+    dark: 'Dark',
+    notifications: 'Notifications',
+    notificationsDesc: 'Receive notifications about appointments and updates',
+    privacy: 'Privacy',
+    privacyDesc: 'Manage privacy and data settings',
+    manage: 'Manage',
   },
 };
 
