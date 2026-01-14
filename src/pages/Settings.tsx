@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Globe, Moon, Sun, Bell, Shield, Mail, Calendar, Megaphone, ArrowLeft } from "lucide-react";
+import { Settings, Globe, Moon, Sun, Shield, Mail, Calendar, Megaphone, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -7,26 +7,102 @@ import { useTheme } from "next-themes";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const SettingsPage = () => {
   const { t, isRTL, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  // Notification preferences (stored in localStorage)
-  const [appointmentReminders, setAppointmentReminders] = useState(() => {
-    return localStorage.getItem('appointmentReminders') !== 'false';
-  });
-  const [promotionalEmails, setPromotionalEmails] = useState(() => {
-    return localStorage.getItem('promotionalEmails') === 'true';
-  });
+  // Notification preferences
+  const [appointmentReminders, setAppointmentReminders] = useState(true);
+  const [promotionalEmails, setPromotionalEmails] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
+  // Load preferences from database
   useEffect(() => {
-    localStorage.setItem('appointmentReminders', String(appointmentReminders));
-  }, [appointmentReminders]);
+    const loadPreferences = async () => {
+      if (!user) {
+        // Fallback to localStorage for non-authenticated users
+        setAppointmentReminders(localStorage.getItem('appointmentReminders') !== 'false');
+        setPromotionalEmails(localStorage.getItem('promotionalEmails') === 'true');
+        setIsLoading(false);
+        return;
+      }
 
-  useEffect(() => {
-    localStorage.setItem('promotionalEmails', String(promotionalEmails));
-  }, [promotionalEmails]);
+      try {
+        const { data, error } = await supabase
+          .from('notification_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setAppointmentReminders(data.appointment_reminders);
+          setPromotionalEmails(data.promotional_emails);
+        }
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPreferences();
+  }, [user]);
+
+  // Save preferences to database
+  const savePreferences = async (reminders: boolean, promotional: boolean) => {
+    if (!user) {
+      // Fallback to localStorage for non-authenticated users
+      localStorage.setItem('appointmentReminders', String(reminders));
+      localStorage.setItem('promotionalEmails', String(promotional));
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('notification_preferences')
+        .upsert({
+          user_id: user.id,
+          appointment_reminders: reminders,
+          promotional_emails: promotional,
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+
+      toast({
+        title: t.common.success,
+        description: language === 'ar' ? 'تم حفظ التفضيلات بنجاح' : 'Preferences saved successfully',
+      });
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      toast({
+        title: t.common.error,
+        description: language === 'ar' ? 'فشل في حفظ التفضيلات' : 'Failed to save preferences',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAppointmentRemindersChange = (checked: boolean) => {
+    setAppointmentReminders(checked);
+    savePreferences(checked, promotionalEmails);
+  };
+
+  const handlePromotionalEmailsChange = (checked: boolean) => {
+    setPromotionalEmails(checked);
+    savePreferences(appointmentReminders, checked);
+  };
 
   const settingsOptions = [
     {
@@ -87,14 +163,14 @@ const SettingsPage = () => {
       titleKey: 'appointmentReminders',
       descriptionKey: 'appointmentRemindersDesc',
       checked: appointmentReminders,
-      onChange: setAppointmentReminders,
+      onChange: handleAppointmentRemindersChange,
     },
     {
       icon: Megaphone,
       titleKey: 'promotionalEmails',
       descriptionKey: 'promotionalEmailsDesc',
       checked: promotionalEmails,
-      onChange: setPromotionalEmails,
+      onChange: handlePromotionalEmailsChange,
     },
   ];
 
@@ -166,7 +242,17 @@ const SettingsPage = () => {
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
               {t.settings.emailNotifications}
+              {isSaving && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
             </h2>
+            {!user && (
+              <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800 mb-4">
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  {language === 'ar' 
+                    ? 'سجل الدخول لحفظ تفضيلاتك عبر جميع الأجهزة' 
+                    : 'Sign in to save your preferences across all devices'}
+                </p>
+              </div>
+            )}
             <div className="grid gap-4">
               {emailSettings.map((option, index) => {
                 const Icon = option.icon;
@@ -191,6 +277,7 @@ const SettingsPage = () => {
                     <Switch 
                       checked={option.checked} 
                       onCheckedChange={option.onChange}
+                      disabled={isLoading}
                     />
                   </div>
                 );
