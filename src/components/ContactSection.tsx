@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const ContactSection = () => {
@@ -40,10 +41,20 @@ const ContactSection = () => {
     setIsSubmitting(true);
 
     try {
-      const validatedData = contactSchema.parse(formData);
+      // Validate form data
+      contactSchema.parse(formData);
       
-      // Simulate form submission
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Send email via edge function
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          message: formData.message.trim(),
+        },
+      });
+
+      if (error) throw error;
       
       toast({
         title: t.contact.successTitle,
