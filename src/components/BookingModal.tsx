@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { ar } from "date-fns/locale";
+import { ar as arLocale, enUS } from "date-fns/locale";
 import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2, ListPlus, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,12 +12,24 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { t } from "@/lib/translations";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { bookingFormSchema } from "@/lib/validation";
 
-const services = [
+interface BookingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
+  const { t, isRTL, language } = useLanguage();
+  const dateLocale = language === 'ar' ? arLocale : enUS;
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const services = [
   { id: "general", name: t.booking.services.general, duration: "30", icon: "🦷" },
   { id: "whitening", name: t.booking.services.whitening, duration: "60", icon: "✨" },
   { id: "rootcanal", name: t.booking.services.rootcanal, duration: "90", icon: "🔧" },
@@ -26,19 +38,11 @@ const services = [
   { id: "cosmetic", name: t.booking.services.cosmetic, duration: "45", icon: "💎" },
 ];
 
-const timeSlots = [
-  "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-  "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM"
-];
+  const timeSlots = [
+    "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+    "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM"
+  ];
 
-interface BookingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -55,7 +59,6 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const [isWaitlistConfirmed, setIsWaitlistConfirmed] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-  const { toast } = useToast();
 
   // Validate form data
   const validateForm = (): boolean => {
@@ -151,7 +154,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   if (!user) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md" dir="rtl">
+        <DialogContent className="sm:max-w-md" dir={isRTL ? 'rtl' : 'ltr'}>
           <div className="text-center py-8">
             <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/25">
               <LogIn className="w-10 h-10 text-primary-foreground" />
@@ -305,7 +308,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
             patientName: formData.name.trim(),
             patientEmail: formData.email.trim(),
             service: selectedServiceData?.name || selectedService,
-            appointmentDate: format(selectedDate, "d MMMM yyyy", { locale: ar }),
+            appointmentDate: format(selectedDate, "d MMMM yyyy", { locale: dateLocale }),
             appointmentTime: selectedTime,
           },
         });
@@ -342,7 +345,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   if (isWaitlistConfirmed) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-lg" dir="rtl">
+        <DialogContent className="sm:max-w-lg" dir={isRTL ? 'rtl' : 'ltr'}>
           <div className="text-center py-8">
             <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-500/25">
               <ListPlus className="w-10 h-10 text-white" />
@@ -358,7 +361,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   <span className="text-muted-foreground">{t.booking.service}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-foreground">{selectedDate && format(selectedDate, "d MMMM yyyy", { locale: ar })}</span>
+                  <span className="font-medium text-foreground">{selectedDate && format(selectedDate, "d MMMM yyyy", { locale: dateLocale })}</span>
                   <span className="text-muted-foreground">{t.booking.preferredDate}</span>
                 </div>
               </div>
@@ -382,7 +385,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   if (isConfirmed) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-lg" dir="rtl">
+        <DialogContent className="sm:max-w-lg" dir={isRTL ? 'rtl' : 'ltr'}>
           <div className="text-center py-8">
             <div className="w-20 h-20 hero-gradient rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/25 animate-scale-in">
               <Check className="w-10 h-10 text-primary-foreground" />
@@ -398,7 +401,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   <span className="text-muted-foreground">{t.booking.service}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-foreground">{selectedDate && format(selectedDate, "d MMMM yyyy", { locale: ar })}</span>
+                  <span className="font-medium text-foreground">{selectedDate && format(selectedDate, "d MMMM yyyy", { locale: dateLocale })}</span>
                   <span className="text-muted-foreground">{t.booking.date}</span>
                 </div>
                 <div className="flex justify-between">
@@ -425,7 +428,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-right">{t.booking.title}</DialogTitle>
           <DialogDescription className="text-right">
@@ -512,7 +515,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                     )}
                   >
                     <CalendarIcon className="ml-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "d MMMM yyyy", { locale: ar }) : t.booking.pickDate}
+                    {selectedDate ? format(selectedDate, "d MMMM yyyy", { locale: dateLocale }) : t.booking.pickDate}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -608,7 +611,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
             {allSlotsBooked && (
               <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
                 <p className="text-sm text-amber-700 dark:text-amber-300 text-right">
-                  {t.booking.waitlistNote.replace("{date}", selectedDate ? format(selectedDate, "d MMMM yyyy", { locale: ar }) : "")}
+                  {t.booking.waitlistNote.replace("{date}", selectedDate ? format(selectedDate, "d MMMM yyyy", { locale: dateLocale }) : "")}
                 </p>
               </div>
             )}
@@ -701,7 +704,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                 <p className="flex items-center gap-2 flex-row-reverse justify-end">
                   <CalendarIcon className="w-4 h-4 text-primary" />
                   <span className="text-muted-foreground">{allSlotsBooked ? t.booking.preferredDate : t.booking.date}</span>
-                  <span className="font-medium">{selectedDate && format(selectedDate, "d MMMM yyyy", { locale: ar })}</span>
+                  <span className="font-medium">{selectedDate && format(selectedDate, "d MMMM yyyy", { locale: dateLocale })}</span>
                 </p>
                 {!allSlotsBooked && selectedTime && (
                   <p className="flex items-center gap-2 flex-row-reverse justify-end">
