@@ -190,6 +190,7 @@ const AdminDashboard = () => {
   const [newTime, setNewTime] = useState<string>('');
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [isNotifyingWaitlist, setIsNotifyingWaitlist] = useState(false);
+  const [isSendingSMSReminders, setIsSendingSMSReminders] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -695,6 +696,30 @@ const AdminDashboard = () => {
     }
   };
 
+  // Send SMS reminders for tomorrow's appointments
+  const sendSMSReminders = async () => {
+    setIsSendingSMSReminders(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-sms-reminder', {});
+
+      if (error) throw error;
+
+      toast({
+        title: 'تم إرسال التذكيرات!',
+        description: `تم معالجة ${data.processed} موعد. ${data.results?.filter((r: any) => r.status === 'sent').length || 0} تذكير تم إرساله بنجاح.`,
+      });
+    } catch (error) {
+      console.error('Error sending SMS reminders:', error);
+      toast({
+        title: 'خطأ',
+        description: 'فشل في إرسال تذكيرات SMS.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSendingSMSReminders(false);
+    }
+  };
+
   // Notify waitlist patients for a specific date
   const notifyWaitlistPatients = async (preferredDate: string) => {
     setIsNotifyingWaitlist(true);
@@ -1145,6 +1170,20 @@ const AdminDashboard = () => {
                   <Button variant="outline" onClick={fetchAppointments} className="rounded-xl">
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Refresh
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={sendSMSReminders}
+                    disabled={isSendingSMSReminders}
+                    className="rounded-xl"
+                  >
+                    {isSendingSMSReminders ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Phone className="h-4 w-4 mr-2" />
+                    )}
+                    إرسال تذكيرات SMS
                   </Button>
 
                   <DropdownMenu>
