@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.send-sms-reminder]
 verify_jwt = false
 
+[functions.send-sms-reminder-scheduled]
+verify_jwt = false
+
 [functions.send-admin-notification]
 verify_jwt = false
 

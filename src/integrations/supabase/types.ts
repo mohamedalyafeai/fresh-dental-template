@@ -215,6 +215,39 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_jobs: {
+        Row: {
+          created_at: string
+          enabled: boolean | null
+          id: string
+          job_name: string
+          last_run: string | null
+          last_status: string | null
+          schedule: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          job_name: string
+          last_run?: string | null
+          last_status?: string | null
+          schedule: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          job_name?: string
+          last_run?: string | null
+          last_status?: string | null
+          schedule?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
