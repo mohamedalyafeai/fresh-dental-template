@@ -72,6 +72,7 @@ import {
 import { AppointmentCalendar } from '@/components/AppointmentCalendar';
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments';
 import { DoctorSelect } from '@/components/DoctorSelect';
+import { ScheduledJobsSection } from '@/components/ScheduledJobsSection';
 import '@/styles/calendar.css';
 
 
@@ -1686,6 +1687,9 @@ const AdminDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Scheduled Jobs Section */}
+              <ScheduledJobsSection />
             </div>
           </TabsContent>
         </Tabs>
