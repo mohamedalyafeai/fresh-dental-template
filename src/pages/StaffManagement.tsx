@@ -15,7 +15,6 @@ import {
   Loader2, 
   ArrowLeft,
   Search,
-  UserPlus,
   Shield,
   ShieldOff,
   Users,
@@ -23,11 +22,12 @@ import {
   Heart,
   Mail,
   RefreshCw,
-  Award,
-  Star
+  Crown,
+  Trash2
 } from 'lucide-react';
 import ActivityLogSection from '@/components/ActivityLogSection';
 import DoctorsList from '@/components/DoctorsList';
+import DoctorRequestsSection from '@/components/DoctorRequestsSection';
 import { t } from '@/lib/translations';
 
 interface UserWithRole {
@@ -36,10 +36,11 @@ interface UserWithRole {
   full_name: string | null;
   created_at: string;
   isAdmin: boolean;
+  isOwner: boolean;
 }
 
 const StaffManagement = () => {
-  const { user, isLoading: authLoading, isAdmin, signOut } = useAuth();
+  const { user, isLoading: authLoading, isAdmin, isOwner, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,7 +49,9 @@ const StaffManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
   const [demotingUserId, setDemotingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [actionType, setActionType] = useState<'promote' | 'demote'>('promote');
   const [activityRefreshTrigger, setActivityRefreshTrigger] = useState(0);
@@ -79,22 +82,26 @@ const StaffManagement = () => {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all admin roles
-      const { data: adminRoles, error: rolesError } = await supabase
+      // Fetch all roles
+      const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin');
+        .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+      const rolesByUser = (roles || []).reduce((acc, r) => {
+        if (!acc[r.user_id]) acc[r.user_id] = [];
+        acc[r.user_id].push(r.role);
+        return acc;
+      }, {} as Record<string, string[]>);
 
       const usersWithRoles: UserWithRole[] = (profiles || []).map(profile => ({
         id: profile.user_id,
         email: profile.email || '',
         full_name: profile.full_name,
         created_at: profile.created_at,
-        isAdmin: adminUserIds.has(profile.user_id),
+        isAdmin: rolesByUser[profile.user_id]?.includes('admin') || rolesByUser[profile.user_id]?.includes('owner') || false,
+        isOwner: rolesByUser[profile.user_id]?.includes('owner') || false,
       }));
 
       setUsers(usersWithRoles);
@@ -189,6 +196,16 @@ const StaffManagement = () => {
       return;
     }
 
+    // Prevent demoting owner
+    if (targetUser.isOwner) {
+      toast({
+        title: t.common.error,
+        description: t.staff.cannotDeleteOwner,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setDemotingUserId(targetUser.id);
     try {
       // Delete admin role
@@ -249,10 +266,95 @@ const StaffManagement = () => {
     }
   };
 
+  const handleDeleteUser = async (targetUser: UserWithRole) => {
+    if (!isOwner) {
+      toast({
+        title: t.common.error,
+        description: t.owner.onlyOwnerCanDelete,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (targetUser.id === user?.id) {
+      toast({
+        title: t.common.error,
+        description: t.staff.cannotDeleteSelf,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (targetUser.isOwner) {
+      toast({
+        title: t.common.error,
+        description: t.staff.cannotDeleteOwner,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDeletingUserId(targetUser.id);
+    try {
+      // Delete user roles first
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', targetUser.id);
+
+      // Delete doctor profile if exists
+      await supabase
+        .from('doctor_profiles')
+        .delete()
+        .eq('user_id', targetUser.id);
+
+      // Delete profile
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', targetUser.id);
+
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        user_id: user!.id,
+        action_type: 'delete_user',
+        target_user_id: targetUser.id,
+        target_user_email: targetUser.email,
+        details: `Deleted user ${targetUser.full_name || targetUser.email}`
+      });
+
+      toast({
+        title: t.staff.userDeleted,
+        description: `${targetUser.full_name || targetUser.email}`,
+      });
+
+      fetchUsers();
+      setActivityRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: t.common.error,
+        description: t.staff.errorDeleting,
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingUserId(null);
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+    }
+  };
+
   const openConfirmDialog = (targetUser: UserWithRole, action: 'promote' | 'demote') => {
     setSelectedUser(targetUser);
     setActionType(action);
     setConfirmDialogOpen(true);
+  };
+
+  const openDeleteDialog = (targetUser: UserWithRole) => {
+    setSelectedUser(targetUser);
+    setDeleteDialogOpen(true);
   };
 
   const filteredUsers = users.filter(u => 
@@ -260,7 +362,8 @@ const StaffManagement = () => {
     (u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const adminCount = users.filter(u => u.isAdmin).length;
+  const ownerCount = users.filter(u => u.isOwner).length;
+  const adminCount = users.filter(u => u.isAdmin && !u.isOwner).length;
   const patientCount = users.filter(u => !u.isAdmin).length;
 
   if (authLoading || !user) {
@@ -290,7 +393,15 @@ const StaffManagement = () => {
                   <Users className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold">{t.staff.title}</h1>
+                  <h1 className="text-lg font-bold flex items-center gap-2">
+                    {t.staff.title}
+                    {isOwner && (
+                      <Badge variant="default" className="bg-amber-500">
+                        <Crown className="h-3 w-3 ml-1" />
+                        {t.staff.owner}
+                      </Badge>
+                    )}
+                  </h1>
                   <p className="text-xs text-muted-foreground">{t.staff.subtitle}</p>
                 </div>
               </div>
@@ -310,7 +421,7 @@ const StaffManagement = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-card/50 backdrop-blur border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -325,6 +436,20 @@ const StaffManagement = () => {
             </CardContent>
           </Card>
           
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <Crown className="h-6 w-6 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{t.staff.owner}</p>
+                  <p className="text-2xl font-bold">{ownerCount}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-card/50 backdrop-blur border-border/50">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -353,6 +478,13 @@ const StaffManagement = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Doctor Requests Section - Only visible to owner */}
+        {isOwner && (
+          <div className="mb-8">
+            <DoctorRequestsSection refreshTrigger={activityRefreshTrigger} />
+          </div>
+        )}
 
         {/* Doctors List */}
         <div className="mb-8">
@@ -404,9 +536,12 @@ const StaffManagement = () => {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              targetUser.isOwner ? 'bg-amber-500/10' : 
                               targetUser.isAdmin ? 'bg-primary/10' : 'bg-secondary'
                             }`}>
-                              {targetUser.isAdmin ? (
+                              {targetUser.isOwner ? (
+                                <Crown className="h-5 w-5 text-amber-500" />
+                              ) : targetUser.isAdmin ? (
                                 <Stethoscope className="h-5 w-5 text-primary" />
                               ) : (
                                 <Heart className="h-5 w-5 text-muted-foreground" />
@@ -422,51 +557,80 @@ const StaffManagement = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={targetUser.isAdmin ? 'default' : 'secondary'}>
-                            {targetUser.isAdmin ? (
-                              <><Stethoscope className="h-3 w-3 ml-1" /> {t.staff.doctorAdmin}</>
-                            ) : (
-                              t.staff.patient
-                            )}
-                          </Badge>
+                          {targetUser.isOwner ? (
+                            <Badge className="bg-amber-500">
+                              <Crown className="h-3 w-3 ml-1" /> {t.staff.owner}
+                            </Badge>
+                          ) : (
+                            <Badge variant={targetUser.isAdmin ? 'default' : 'secondary'}>
+                              {targetUser.isAdmin ? (
+                                <><Stethoscope className="h-3 w-3 ml-1" /> {t.staff.doctorAdmin}</>
+                              ) : (
+                                t.staff.patient
+                              )}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {format(new Date(targetUser.created_at), 'dd MMM yyyy', { locale: ar })}
                         </TableCell>
                         <TableCell className="text-left">
-                          {targetUser.id === user?.id ? (
-                            <Badge variant="outline">{t.common.you}</Badge>
-                          ) : targetUser.isAdmin ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openConfirmDialog(targetUser, 'demote')}
-                              disabled={demotingUserId === targetUser.id}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              {demotingUserId === targetUser.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                              ) : (
-                                <ShieldOff className="h-4 w-4 ml-2" />
-                              )}
-                              {t.staff.demoteToPatient}
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openConfirmDialog(targetUser, 'promote')}
-                              disabled={promotingUserId === targetUser.id}
-                              className="text-primary hover:text-primary"
-                            >
-                              {promotingUserId === targetUser.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                              ) : (
-                                <Shield className="h-4 w-4 ml-2" />
-                              )}
-                              {t.staff.promoteToDoctor}
-                            </Button>
-                          )}
+                          <div className="flex gap-2">
+                            {targetUser.id === user?.id ? (
+                              <Badge variant="outline">{t.common.you}</Badge>
+                            ) : targetUser.isOwner ? (
+                              <Badge variant="outline" className="text-amber-500 border-amber-500">
+                                <Crown className="h-3 w-3 ml-1" /> {t.staff.owner}
+                              </Badge>
+                            ) : targetUser.isAdmin ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openConfirmDialog(targetUser, 'demote')}
+                                disabled={demotingUserId === targetUser.id}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                {demotingUserId === targetUser.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                                ) : (
+                                  <ShieldOff className="h-4 w-4 ml-2" />
+                                )}
+                                {t.staff.demoteToPatient}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openConfirmDialog(targetUser, 'promote')}
+                                disabled={promotingUserId === targetUser.id}
+                                className="text-primary hover:text-primary"
+                              >
+                                {promotingUserId === targetUser.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                                ) : (
+                                  <Shield className="h-4 w-4 ml-2" />
+                                )}
+                                {t.staff.promoteToDoctor}
+                              </Button>
+                            )}
+                            
+                            {/* Delete button - only for owner and not for self or other owners */}
+                            {isOwner && targetUser.id !== user?.id && !targetUser.isOwner && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openDeleteDialog(targetUser)}
+                                disabled={deletingUserId === targetUser.id}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                {deletingUserId === targetUser.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -483,7 +647,7 @@ const StaffManagement = () => {
         </div>
       </main>
 
-      {/* Confirmation Dialog */}
+      {/* Promote/Demote Confirmation Dialog */}
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
@@ -517,6 +681,29 @@ const StaffManagement = () => {
               className={actionType === 'demote' ? 'bg-destructive hover:bg-destructive/90' : ''}
             >
               {actionType === 'promote' ? t.staff.promote : t.staff.demote}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.staff.deleteUserTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.staff.deleteUserDesc}
+              <br /><br />
+              <strong>{selectedUser?.full_name || selectedUser?.email}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedUser && handleDeleteUser(selectedUser)}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {t.staff.confirmDelete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
