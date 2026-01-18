@@ -13,8 +13,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle } from 'lucide-react';
+import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import DoctorApplicationForm from '@/components/DoctorApplicationForm';
 
 interface Appointment {
   id: string;
@@ -393,6 +394,15 @@ const PatientPortal = () => {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Doctor Application Section */}
+            <div className="mt-8">
+              <h2 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Stethoscope className="h-5 w-5 text-primary" />
+                {t.owner?.becomeDoctor || 'التقدم كطبيب'}
+              </h2>
+              <DoctorApplicationForm />
             </div>
           </div>
         )}

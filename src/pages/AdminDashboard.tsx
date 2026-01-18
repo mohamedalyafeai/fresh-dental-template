@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import OwnerAnalytics from '@/components/OwnerAnalytics';
+import ClinicSettings from '@/components/ClinicSettings';
 import { patientNoteSchema } from '@/lib/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1592,62 +1594,28 @@ const AdminDashboard = () => {
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5 text-primary" />
-                    Clinic Settings
-                  </CardTitle>
-                  <CardDescription>Manage your clinic preferences</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Clinic Name</Label>
-                    <Input defaultValue="BrightSmile Dental" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Phone Number</Label>
-                    <Input defaultValue="+1 (234) 567-8900" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input defaultValue="info@brightsmile.com" className="rounded-xl" />
-                  </div>
-                  <Button className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
-                    Save Changes
-                  </Button>
-                </CardContent>
-              </Card>
+            {/* Owner Analytics - Only for owners */}
+            {isOwner && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6 text-primary" />
+                  تحليلات العيادة
+                </h2>
+                <OwnerAnalytics />
+              </div>
+            )}
 
-              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    Working Hours
-                  </CardTitle>
-                  <CardDescription>Configure appointment availability</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Opens At</Label>
-                      <Input defaultValue="9:00 AM" className="rounded-xl" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Closes At</Label>
-                      <Input defaultValue="5:00 PM" className="rounded-xl" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Appointment Duration (minutes)</Label>
-                    <Input type="number" defaultValue="30" className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Max Appointments per Day</Label>
-                    <Input type="number" defaultValue="15" className="rounded-xl" />
-                  </div>
-                  <Button className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
+            {/* Clinic Settings */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <Settings className="h-6 w-6 text-primary" />
+                إعدادات العيادة
+              </h2>
+              <ClinicSettings />
+            </div>
+
+            {/* Scheduled Jobs */}
+            <div className="mt-8">
                     Update Schedule
                   </Button>
                 </CardContent>

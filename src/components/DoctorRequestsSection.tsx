@@ -129,6 +129,19 @@ const DoctorRequestsSection = ({ refreshTrigger }: DoctorRequestsSectionProps) =
         details: `Approved doctor request for ${request.full_name}`
       });
 
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-doctor-approval-notification', {
+          body: {
+            userEmail: request.email,
+            userName: request.full_name,
+            actionType: 'approved'
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+      }
+
       toast({
         title: t.owner.requestApproved,
         description: `${request.full_name} ${t.owner.isNowDoctor}`,
@@ -173,6 +186,20 @@ const DoctorRequestsSection = ({ refreshTrigger }: DoctorRequestsSectionProps) =
         target_user_email: selectedRequest.email,
         details: `Rejected doctor request for ${selectedRequest.full_name}. Reason: ${rejectionReason}`
       });
+
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-doctor-approval-notification', {
+          body: {
+            userEmail: selectedRequest.email,
+            userName: selectedRequest.full_name,
+            actionType: 'rejected',
+            rejectionReason: rejectionReason
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
+      }
 
       toast({
         title: t.owner.requestRejected,
