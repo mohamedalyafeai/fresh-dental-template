@@ -89,6 +89,54 @@ export type Database = {
         }
         Relationships: []
       }
+      clinic_settings: {
+        Row: {
+          address: string | null
+          clinic_logo_url: string | null
+          clinic_name: string
+          created_at: string
+          email: string | null
+          id: string
+          phone: string | null
+          sunday_closed: boolean | null
+          updated_at: string
+          working_hours_saturday_end: string | null
+          working_hours_saturday_start: string | null
+          working_hours_weekday_end: string | null
+          working_hours_weekday_start: string | null
+        }
+        Insert: {
+          address?: string | null
+          clinic_logo_url?: string | null
+          clinic_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          sunday_closed?: boolean | null
+          updated_at?: string
+          working_hours_saturday_end?: string | null
+          working_hours_saturday_start?: string | null
+          working_hours_weekday_end?: string | null
+          working_hours_weekday_start?: string | null
+        }
+        Update: {
+          address?: string | null
+          clinic_logo_url?: string | null
+          clinic_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          sunday_closed?: boolean | null
+          updated_at?: string
+          working_hours_saturday_end?: string | null
+          working_hours_saturday_start?: string | null
+          working_hours_weekday_end?: string | null
+          working_hours_weekday_start?: string | null
+        }
+        Relationships: []
+      }
       doctor_profiles: {
         Row: {
           avatar_url: string | null
