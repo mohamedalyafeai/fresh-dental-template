@@ -155,7 +155,7 @@ const getStatusBadgeVariant = (status: string) => {
 };
 
 const AdminDashboard = () => {
-  const { user, isLoading: authLoading, isAdmin, signOut } = useAuth();
+  const { user, isLoading: authLoading, isAdmin, isOwner, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -1614,51 +1614,44 @@ const AdminDashboard = () => {
               <ClinicSettings />
             </div>
 
-            {/* Scheduled Jobs */}
-            <div className="mt-8">
-                    Update Schedule
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5 text-primary" />
-                    Notification Settings
-                  </CardTitle>
-                  <CardDescription>Configure email and SMS reminders</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-medium">Confirmation Emails</p>
-                        <Badge variant="default">Active</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Send email when appointment is booked</p>
+            {/* Notification Settings */}
+            <Card className="border-0 shadow-lg bg-card/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5 text-primary" />
+                  Notification Settings
+                </CardTitle>
+                <CardDescription>Configure email and SMS reminders</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium">Confirmation Emails</p>
+                      <Badge variant="default">Active</Badge>
                     </div>
-                    <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-medium">SMS Reminders</p>
-                        <Badge variant="default">Active</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Send SMS 24 hours before appointment</p>
-                    </div>
-                    <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-medium">Waitlist Notifications</p>
-                        <Badge variant="default">Active</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Notify patients when slots open</p>
-                    </div>
+                    <p className="text-sm text-muted-foreground">Send email when appointment is booked</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium">SMS Reminders</p>
+                      <Badge variant="default">Active</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Send SMS 24 hours before appointment</p>
+                  </div>
+                  <div className="p-4 rounded-2xl border bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium">Waitlist Notifications</p>
+                      <Badge variant="default">Active</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Notify patients when slots open</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Scheduled Jobs Section */}
-              <ScheduledJobsSection />
-            </div>
+            {/* Scheduled Jobs Section */}
+            <ScheduledJobsSection />
           </TabsContent>
         </Tabs>
       </main>
