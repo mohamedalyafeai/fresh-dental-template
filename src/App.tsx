@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import PatientPortal from "./pages/PatientPortal";
 import StaffManagement from "./pages/StaffManagement";
 import DoctorProfile from "./pages/DoctorProfile";
+import DoctorSchedule from "./pages/DoctorSchedule";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/staff" element={<StaffManagement />} />
               <Route path="/admin/profile" element={<DoctorProfile />} />
+              <Route path="/admin/schedule" element={<DoctorSchedule />} />
               <Route path="/portal" element={<PatientPortal />} />
               <Route path="/settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

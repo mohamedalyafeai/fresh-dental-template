@@ -1005,6 +1005,10 @@ const AdminDashboard = () => {
               <User className="h-4 w-4 ml-2" />
               ملفي الشخصي
             </Button>
+            <Button variant="outline" onClick={() => navigate('/admin/schedule')} className="rounded-xl">
+              <Clock className="h-4 w-4 ml-2" />
+              جدول الدوام
+            </Button>
             <Button variant="outline" onClick={() => navigate('/admin/staff')} className="rounded-xl">
               <Users className="h-4 w-4 ml-2" />
               إدارة الموظفين
