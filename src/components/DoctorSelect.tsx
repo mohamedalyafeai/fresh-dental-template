@@ -5,15 +5,19 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Stethoscope } from 'lucide-react';
 
 interface DoctorProfile {
+  id: string | null;
+  user_id: string | null;
+  specialty: string | null;
+  is_available: boolean | null;
+  years_experience: number | null;
+}
+
+interface DoctorWithName {
   id: string;
   user_id: string;
   specialty: string | null;
-  badge_number: string | null;
   is_available: boolean;
   years_experience: number;
-}
-
-interface DoctorWithName extends DoctorProfile {
   name: string;
   email: string;
 }
@@ -35,11 +39,10 @@ export const DoctorSelect = ({ value, onValueChange, disabled }: DoctorSelectPro
   const fetchDoctors = async () => {
     setIsLoading(true);
     try {
-      // Fetch available doctor profiles
+      // Fetch available doctor profiles from public view (excludes phone and badge_number for privacy)
       const { data: profiles, error: profilesError } = await supabase
-        .from('doctor_profiles')
-        .select('*')
-        .eq('is_available', true);
+        .from('public_doctor_profiles')
+        .select('id, user_id, specialty, is_available, years_experience');
 
       if (profilesError) throw profilesError;
 
@@ -59,20 +62,25 @@ export const DoctorSelect = ({ value, onValueChange, disabled }: DoctorSelectPro
       const adminUserIds = new Set(userRoles?.map(r => r.user_id) || []);
 
       // Fetch profiles for admin users
+      const validProfiles = profiles.filter(p => p.user_id !== null);
       const { data: userProfiles, error: profileError } = await supabase
         .from('profiles')
         .select('user_id, full_name, email')
-        .in('user_id', profiles.map(p => p.user_id));
+        .in('user_id', validProfiles.map(p => p.user_id!));
 
       if (profileError) throw profileError;
 
       // Combine data
-      const doctorsWithNames: DoctorWithName[] = profiles
-        .filter(p => adminUserIds.has(p.user_id))
+      const doctorsWithNames: DoctorWithName[] = validProfiles
+        .filter(p => p.user_id && adminUserIds.has(p.user_id))
         .map(profile => {
           const userProfile = userProfiles?.find(up => up.user_id === profile.user_id);
           return {
             ...profile,
+            id: profile.id!,
+            user_id: profile.user_id!,
+            is_available: profile.is_available ?? true,
+            years_experience: profile.years_experience ?? 0,
             name: userProfile?.full_name || 'طبيب',
             email: userProfile?.email || '',
           };
@@ -122,11 +130,6 @@ export const DoctorSelect = ({ value, onValueChange, disabled }: DoctorSelectPro
                 <Badge variant="secondary" className="text-xs">
                   {doctor.specialty}
                 </Badge>
-              )}
-              {doctor.badge_number && (
-                <span className="text-xs text-muted-foreground font-mono">
-                  {doctor.badge_number}
-                </span>
               )}
             </div>
           </SelectItem>

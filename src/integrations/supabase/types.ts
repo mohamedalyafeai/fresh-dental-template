@@ -502,7 +502,6 @@ export type Database = {
       public_doctor_profiles: {
         Row: {
           avatar_url: string | null
-          badge_number: string | null
           bio: string | null
           created_at: string | null
           id: string | null
@@ -514,7 +513,6 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
-          badge_number?: string | null
           bio?: string | null
           created_at?: string | null
           id?: string | null
@@ -526,7 +524,6 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
-          badge_number?: string | null
           bio?: string | null
           created_at?: string | null
           id?: string | null
