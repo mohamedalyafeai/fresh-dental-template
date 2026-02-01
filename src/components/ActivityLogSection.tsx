@@ -74,12 +74,36 @@ const ActivityLogSection = ({ refreshTrigger }: ActivityLogSectionProps) => {
     fetchLogs();
   }, [refreshTrigger]);
 
+  const getActionDescription = (actionType: string, targetEmail: string | null) => {
+    switch (actionType) {
+      case 'promote':
+        return <>قام بترقية <span className="font-medium text-primary">{targetEmail}</span> إلى دكتور/مشرف</>;
+      case 'demote':
+        return <>قام بتخفيض <span className="font-medium text-primary">{targetEmail}</span> إلى مريض</>;
+      case 'approve_doctor':
+        return <>قام بقبول طلب انضمام <span className="font-medium text-primary">{targetEmail}</span> كطبيب</>;
+      case 'reject_doctor':
+        return <>قام برفض طلب انضمام <span className="font-medium text-primary">{targetEmail}</span></>;
+      case 'update_schedule':
+        return 'قام بتحديث جدول الدوام الأسبوعي';
+      case 'add_day_off':
+        return 'قام بإضافة يوم إجازة';
+      default:
+        return `قام بـ ${actionType}`;
+    }
+  };
+
   const getActionIcon = (actionType: string) => {
     switch (actionType) {
       case 'promote':
+      case 'approve_doctor':
         return <Shield className="h-4 w-4 text-primary" />;
       case 'demote':
+      case 'reject_doctor':
         return <ShieldOff className="h-4 w-4 text-destructive" />;
+      case 'update_schedule':
+      case 'add_day_off':
+        return <Clock className="h-4 w-4 text-accent" />;
       default:
         return <Activity className="h-4 w-4 text-muted-foreground" />;
     }
@@ -91,6 +115,14 @@ const ActivityLogSection = ({ refreshTrigger }: ActivityLogSectionProps) => {
         return <Badge className="bg-primary/10 text-primary border-primary/20">ترقية</Badge>;
       case 'demote':
         return <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">تخفيض</Badge>;
+      case 'approve_doctor':
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">قبول طبيب</Badge>;
+      case 'reject_doctor':
+        return <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">رفض طبيب</Badge>;
+      case 'update_schedule':
+        return <Badge className="bg-accent/10 text-accent border-accent/20">تحديث الجدول</Badge>;
+      case 'add_day_off':
+        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">إضافة إجازة</Badge>;
       default:
         return <Badge variant="secondary">{actionType}</Badge>;
     }
@@ -151,11 +183,7 @@ const ActivityLogSection = ({ refreshTrigger }: ActivityLogSectionProps) => {
                     <p className="text-sm">
                       <span className="font-medium">{log.admin_email}</span>
                       {' '}
-                      {log.action_type === 'promote' ? 'قام بترقية' : 'قام بتخفيض'}
-                      {' '}
-                      <span className="font-medium text-primary">{log.target_user_email}</span>
-                      {' '}
-                      {log.action_type === 'promote' ? 'إلى دكتور/مشرف' : 'إلى مريض'}
+                      {getActionDescription(log.action_type, log.target_user_email)}
                     </p>
                     {log.details && (
                       <p className="text-xs text-muted-foreground mt-1">{log.details}</p>
