@@ -208,6 +208,25 @@ const DoctorSchedulePage = () => {
         details: 'تم تحديث جدول الدوام الأسبوعي',
       });
 
+      // Send email notification to admins
+      const doctorName = user?.user_metadata?.full_name || 'طبيب';
+      const workingDays = schedules
+        .filter(s => s.is_available)
+        .map(s => DAYS_OF_WEEK.find(d => d.value === s.day_of_week)?.label)
+        .join('، ');
+      
+      try {
+        await supabase.functions.invoke('send-schedule-update-notification', {
+          body: {
+            doctorName,
+            updateType: 'schedule',
+            details: `أيام العمل: ${workingDays || 'لا يوجد'}`,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send schedule update notification:', emailError);
+      }
+
       toast({
         title: 'تم الحفظ',
         description: 'تم حفظ جدول الدوام بنجاح',
@@ -257,6 +276,20 @@ const DoctorSchedulePage = () => {
         action_type: 'add_day_off',
         details: `تمت إضافة يوم إجازة: ${format(selectedDate, 'dd MMM yyyy', { locale: ar })}`,
       });
+
+      // Send email notification to admins
+      const doctorName = user?.user_metadata?.full_name || 'طبيب';
+      try {
+        await supabase.functions.invoke('send-schedule-update-notification', {
+          body: {
+            doctorName,
+            updateType: 'day_off_add',
+            details: `التاريخ: ${format(selectedDate, 'dd MMM yyyy', { locale: ar })}${dayOffReason ? ` - السبب: ${dayOffReason}` : ''}`,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send day off notification:', emailError);
+      }
 
       toast({
         title: 'تمت الإضافة',
