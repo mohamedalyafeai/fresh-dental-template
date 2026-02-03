@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
-import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2, ListPlus, LogIn } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2, ListPlus, LogIn, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useDoctorAvailability } from "@/hooks/useDoctorAvailability";
 import { bookingFormSchema } from "@/lib/validation";
 
 interface BookingModalProps {
@@ -59,6 +60,10 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const [isWaitlistConfirmed, setIsWaitlistConfirmed] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [unavailableReason, setUnavailableReason] = useState<string | undefined>();
+  const [doctorAvailableSlots, setDoctorAvailableSlots] = useState<string[]>(timeSlots);
+  
+  const { checkDateAvailability, isLoading: isCheckingAvailability } = useDoctorAvailability();
 
   // Validate form data
   const validateForm = (): boolean => {
@@ -110,16 +115,24 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     }
   }, [isOpen, user]);
 
-  // Fetch booked slots when date changes - MUST be before any conditional returns
+  // Fetch booked slots and check doctor availability when date changes
   useEffect(() => {
-    const fetchBookedSlots = async () => {
+    const fetchAvailability = async () => {
       if (!selectedDate) {
         setBookedSlots([]);
+        setDoctorAvailableSlots(timeSlots);
+        setUnavailableReason(undefined);
         return;
       }
 
       setIsLoadingSlots(true);
       try {
+        // Check doctor availability for this date
+        const { availableSlots: doctorSlots, unavailableReason: reason } = await checkDateAvailability(selectedDate, timeSlots);
+        setDoctorAvailableSlots(doctorSlots);
+        setUnavailableReason(reason);
+
+        // Fetch already booked slots
         const { data, error } = await supabase
           .from("appointments")
           .select("appointment_time")
@@ -131,19 +144,20 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
         const slots = data?.map(apt => apt.appointment_time) || [];
         setBookedSlots(slots);
         
-        if (selectedTime && slots.includes(selectedTime)) {
+        if (selectedTime && (slots.includes(selectedTime) || !doctorSlots.includes(selectedTime))) {
           setSelectedTime(null);
         }
       } catch (error) {
-        console.error("Error fetching booked slots:", error);
+        console.error("Error fetching availability:", error);
         setBookedSlots([]);
+        setDoctorAvailableSlots(timeSlots);
       } finally {
         setIsLoadingSlots(false);
       }
     };
 
-    fetchBookedSlots();
-  }, [selectedDate]);
+    fetchAvailability();
+  }, [selectedDate, checkDateAvailability]);
 
   const handleLoginRedirect = () => {
     onClose();
@@ -338,8 +352,10 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const canProceedStep3 = formData.name.trim() && formData.email.trim() && formData.phone.trim();
 
   const selectedServiceData = services.find(s => s.id === selectedService);
-  const availableSlots = timeSlots.filter(slot => !bookedSlots.includes(slot));
+  // Filter slots: must be in doctor's available hours AND not already booked
+  const availableSlots = doctorAvailableSlots.filter(slot => !bookedSlots.includes(slot));
   const allSlotsBooked = selectedDate && !isLoadingSlots && availableSlots.length === 0;
+  const clinicClosed = selectedDate && !isLoadingSlots && doctorAvailableSlots.length === 0;
 
   // Waitlist confirmation screen
   if (isWaitlistConfirmed) {
@@ -535,10 +551,28 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
             <div>
               <h3 className="font-semibold text-lg mb-3 text-right">{t.booking.selectTime}</h3>
-              {isLoadingSlots ? (
+              {isLoadingSlots || isCheckingAvailability ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   <span className="mr-2 text-muted-foreground">{t.booking.checkingAvailability}</span>
+                </div>
+              ) : clinicClosed ? (
+                <div className="text-center py-8 bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-800">
+                  <AlertCircle className="h-10 w-10 mx-auto mb-3 text-red-500" />
+                  <p className="font-semibold text-foreground mb-1">
+                    {language === 'ar' ? 'غير متاح' : 'Not Available'}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {unavailableReason || (language === 'ar' ? 'لا يوجد أطباء متاحين في هذا اليوم' : 'No doctors available on this day')}
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(3)}
+                    className="border-amber-500 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-950"
+                  >
+                    <ListPlus className="w-4 h-4 ml-2" />
+                    {t.booking.joinWaitlistButton}
+                  </Button>
                 </div>
               ) : allSlotsBooked ? (
                 <div className="text-center py-8 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-800">
@@ -558,19 +592,23 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {timeSlots.map((time) => {
                     const isBooked = bookedSlots.includes(time);
+                    const isOutsideWorkingHours = !doctorAvailableSlots.includes(time);
+                    const isDisabled = isBooked || isOutsideWorkingHours;
                     return (
                       <button
                         key={time}
-                        onClick={() => !isBooked && setSelectedTime(time)}
-                        disabled={isBooked}
+                        onClick={() => !isDisabled && setSelectedTime(time)}
+                        disabled={isDisabled}
                         className={cn(
                           "py-3 px-3 rounded-xl border text-sm font-medium transition-all",
-                          isBooked
-                            ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through opacity-50"
+                          isDisabled
+                            ? "border-border bg-muted text-muted-foreground cursor-not-allowed opacity-50"
                             : selectedTime === time
                             ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
+                            : "border-border hover:border-primary/50 hover:bg-muted/50",
+                          isBooked && "line-through"
                         )}
+                        title={isOutsideWorkingHours ? (language === 'ar' ? 'خارج ساعات العمل' : 'Outside working hours') : isBooked ? (language === 'ar' ? 'محجوز' : 'Booked') : ''}
                       >
                         {time}
                       </button>
@@ -592,7 +630,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
               </Button>
               <Button
                 onClick={() => setStep(3)}
-                disabled={!allSlotsBooked && !canProceedStep2}
+                disabled={!allSlotsBooked && !clinicClosed && !canProceedStep2}
                 className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
               >
                 {allSlotsBooked ? t.booking.continueToWaitlist : t.booking.continue}
