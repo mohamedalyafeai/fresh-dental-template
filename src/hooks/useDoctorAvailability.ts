@@ -135,12 +135,17 @@ export const useDoctorAvailability = () => {
     }
   }, []);
 
-  // Check if a specific doctor is available on a date and time
+  // Check availability for a specific doctor on a date (all time slots)
   const checkDoctorAvailability = useCallback(async (
-    doctorId: string,
     date: Date,
-    time: string
-  ): Promise<AvailabilityResult> => {
+    allTimeSlots: string[],
+    doctorId?: string
+  ): Promise<{ availableSlots: string[]; unavailableReason?: string }> => {
+    // If no doctor specified, use the general availability check
+    if (!doctorId) {
+      return checkDateAvailability(date, allTimeSlots);
+    }
+
     setIsLoading(true);
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
@@ -160,9 +165,8 @@ export const useDoctorAvailability = () => {
 
       if (dayOff) {
         return {
-          isAvailable: false,
-          reason: dayOff.reason || 'الطبيب في إجازة في هذا اليوم',
-          availableSlots: []
+          availableSlots: [],
+          unavailableReason: dayOff.reason || 'الطبيب في إجازة في هذا اليوم'
         };
       }
 
@@ -176,39 +180,41 @@ export const useDoctorAvailability = () => {
 
       if (scheduleError) {
         console.error('Error checking schedule:', scheduleError);
+        return { availableSlots: allTimeSlots };
       }
 
       if (!schedule) {
-        // No schedule set, assume available
-        return { isAvailable: true, availableSlots: [] };
+        // No schedule set, assume all slots available
+        return { availableSlots: allTimeSlots };
       }
 
       if (!schedule.is_available) {
         return {
-          isAvailable: false,
-          reason: 'الطبيب لا يعمل في هذا اليوم',
-          availableSlots: []
+          availableSlots: [],
+          unavailableReason: 'الطبيب لا يعمل في هذا اليوم'
         };
       }
 
-      // Check if the requested time falls within working hours
-      const time24 = convertTo24Hour(time);
-      if (time24 < schedule.start_time || time24 >= schedule.end_time) {
+      // Filter time slots that fall within the doctor's working hours
+      const availableSlots = allTimeSlots.filter(slot => 
+        isTimeInRange(slot, schedule.start_time, schedule.end_time)
+      );
+
+      if (availableSlots.length === 0) {
         return {
-          isAvailable: false,
-          reason: `ساعات عمل الطبيب: ${schedule.start_time} - ${schedule.end_time}`,
-          availableSlots: []
+          availableSlots: [],
+          unavailableReason: `ساعات عمل الطبيب: ${schedule.start_time} - ${schedule.end_time}`
         };
       }
 
-      return { isAvailable: true, availableSlots: [] };
+      return { availableSlots };
     } catch (error) {
       console.error('Error checking doctor availability:', error);
-      return { isAvailable: true, availableSlots: [] };
+      return { availableSlots: allTimeSlots };
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [checkDateAvailability]);
 
   return {
     isLoading,

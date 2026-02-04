@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
-import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2, ListPlus, LogIn, Info } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Mail, Phone, FileText, Check, AlertCircle, Loader2, ListPlus, LogIn, Info, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -46,6 +48,9 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<string | undefined>();
+  const [doctors, setDoctors] = useState<Array<{ id: string; user_id: string; name: string; specialty: string | null; is_available: boolean }>>([]);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -63,7 +68,58 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const [unavailableReason, setUnavailableReason] = useState<string | undefined>();
   const [doctorAvailableSlots, setDoctorAvailableSlots] = useState<string[]>(timeSlots);
   
-  const { checkDateAvailability, isLoading: isCheckingAvailability } = useDoctorAvailability();
+  const { checkDoctorAvailability, isLoading: isCheckingAvailability } = useDoctorAvailability();
+
+  // Fetch available doctors
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      setIsLoadingDoctors(true);
+      try {
+        // Fetch doctor profiles from public view
+        const { data: profiles, error: profilesError } = await supabase
+          .from('public_doctor_profiles')
+          .select('id, user_id, specialty, is_available, years_experience')
+          .eq('is_available', true);
+
+        if (profilesError) throw profilesError;
+
+        if (!profiles || profiles.length === 0) {
+          setDoctors([]);
+          return;
+        }
+
+        // Fetch user names
+        const validProfiles = profiles.filter(p => p.user_id !== null);
+        const { data: userProfiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', validProfiles.map(p => p.user_id!));
+
+        if (profileError) throw profileError;
+
+        const doctorsWithNames = validProfiles.map(profile => {
+          const userProfile = userProfiles?.find(up => up.user_id === profile.user_id);
+          return {
+            id: profile.id!,
+            user_id: profile.user_id!,
+            name: userProfile?.full_name || (language === 'ar' ? 'طبيب' : 'Doctor'),
+            specialty: profile.specialty,
+            is_available: profile.is_available ?? true,
+          };
+        });
+
+        setDoctors(doctorsWithNames);
+      } catch (error) {
+        console.error('Error fetching doctors:', error);
+      } finally {
+        setIsLoadingDoctors(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchDoctors();
+    }
+  }, [isOpen, language]);
 
   // Validate form data
   const validateForm = (): boolean => {
@@ -115,7 +171,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     }
   }, [isOpen, user]);
 
-  // Fetch booked slots and check doctor availability when date changes
+  // Fetch booked slots and check doctor availability when date or doctor changes
   useEffect(() => {
     const fetchAvailability = async () => {
       if (!selectedDate) {
@@ -127,17 +183,28 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
       setIsLoadingSlots(true);
       try {
-        // Check doctor availability for this date
-        const { availableSlots: doctorSlots, unavailableReason: reason } = await checkDateAvailability(selectedDate, timeSlots);
+        // Check doctor availability for this date (use selected doctor if specified)
+        const { availableSlots: doctorSlots, unavailableReason: reason } = await checkDoctorAvailability(
+          selectedDate, 
+          timeSlots, 
+          selectedDoctor
+        );
         setDoctorAvailableSlots(doctorSlots);
         setUnavailableReason(reason);
 
-        // Fetch already booked slots
-        const { data, error } = await supabase
+        // Fetch already booked slots for this date and doctor
+        let query = supabase
           .from("appointments")
           .select("appointment_time")
           .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
           .neq("status", "cancelled");
+        
+        // If doctor is selected, only check their appointments
+        if (selectedDoctor) {
+          query = query.eq("doctor_id", selectedDoctor);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -157,7 +224,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     };
 
     fetchAvailability();
-  }, [selectedDate, checkDateAvailability]);
+  }, [selectedDate, selectedDoctor, checkDoctorAvailability]);
 
   const handleLoginRedirect = () => {
     onClose();
@@ -204,6 +271,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const resetForm = () => {
     setStep(1);
     setSelectedService(null);
+    setSelectedDoctor(undefined);
     setSelectedDate(undefined);
     setSelectedTime(null);
     setFormData({ name: "", email: "", phone: "", notes: "" });
@@ -312,6 +380,7 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
         appointment_date: format(selectedDate, "yyyy-MM-dd"),
         appointment_time: selectedTime,
         notes: formData.notes.trim() || null,
+        doctor_id: selectedDoctor || null,
       });
 
       if (error) throw error;
@@ -416,6 +485,12 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   <span className="font-medium text-foreground">{selectedServiceData?.name}</span>
                   <span className="text-muted-foreground">{t.booking.service}</span>
                 </div>
+                {selectedDoctor && (
+                  <div className="flex justify-between">
+                    <span className="font-medium text-foreground">{doctors.find(d => d.id === selectedDoctor)?.name}</span>
+                    <span className="text-muted-foreground">{language === 'ar' ? 'الطبيب' : 'Doctor'}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="font-medium text-foreground">{selectedDate && format(selectedDate, "d MMMM yyyy", { locale: dateLocale })}</span>
                   <span className="text-muted-foreground">{t.booking.date}</span>
@@ -516,9 +591,49 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
           </div>
         )}
 
-        {/* Step 2: Select Date & Time */}
+        {/* Step 2: Select Doctor, Date & Time */}
         {step === 2 && (
           <div className="space-y-6">
+            {/* Doctor Selection */}
+            {doctors.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3 text-right flex items-center gap-2 justify-end">
+                  <Stethoscope className="h-5 w-5 text-primary" />
+                  {language === 'ar' ? 'اختر الطبيب (اختياري)' : 'Select Doctor (Optional)'}
+                </h3>
+                {isLoadingDoctors ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">{language === 'ar' ? 'جاري تحميل الأطباء...' : 'Loading doctors...'}</span>
+                  </div>
+                ) : (
+                  <Select value={selectedDoctor || 'any'} onValueChange={(v) => setSelectedDoctor(v === 'any' ? undefined : v)}>
+                    <SelectTrigger className="w-full h-12 rounded-xl">
+                      <SelectValue placeholder={language === 'ar' ? 'أي طبيب متاح' : 'Any available doctor'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">
+                        <span className="text-muted-foreground">{language === 'ar' ? 'أي طبيب متاح' : 'Any available doctor'}</span>
+                      </SelectItem>
+                      {doctors.map((doctor) => (
+                        <SelectItem key={doctor.id} value={doctor.id}>
+                          <div className="flex items-center gap-2">
+                            <Stethoscope className="h-4 w-4 text-primary" />
+                            <span className="font-medium">{doctor.name}</span>
+                            {doctor.specialty && (
+                              <Badge variant="secondary" className="text-xs">
+                                {doctor.specialty}
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
             <div>
               <h3 className="font-semibold text-lg mb-3 text-right">{t.booking.selectDate}</h3>
               <Popover>
@@ -739,6 +854,13 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   <span className="text-muted-foreground">{t.booking.service}</span>
                   <span className="font-medium">{selectedServiceData?.name}</span>
                 </p>
+                {selectedDoctor && (
+                  <p className="flex items-center gap-2 flex-row-reverse justify-end">
+                    <Stethoscope className="w-4 h-4 text-primary" />
+                    <span className="text-muted-foreground">{language === 'ar' ? 'الطبيب' : 'Doctor'}</span>
+                    <span className="font-medium">{doctors.find(d => d.id === selectedDoctor)?.name}</span>
+                  </p>
+                )}
                 <p className="flex items-center gap-2 flex-row-reverse justify-end">
                   <CalendarIcon className="w-4 h-4 text-primary" />
                   <span className="text-muted-foreground">{allSlotsBooked ? t.booking.preferredDate : t.booking.date}</span>
