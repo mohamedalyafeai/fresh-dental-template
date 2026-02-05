@@ -16,6 +16,12 @@ import { format } from 'date-fns';
 import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DoctorApplicationForm from '@/components/DoctorApplicationForm';
+ import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
+ 
+ interface DoctorInfo {
+   id: string;
+   name: string;
+ }
 
 interface Appointment {
   id: string;
@@ -28,6 +34,7 @@ interface Appointment {
   status: string;
   notes: string | null;
   created_at: string;
+   doctor_id: string | null;
 }
 
 const TIME_SLOTS = [
@@ -65,6 +72,10 @@ const PatientPortal = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+ 
+   // Doctor filter state
+   const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
+   const [selectedDoctorFilter, setSelectedDoctorFilter] = useState<string>('all');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -101,8 +112,46 @@ const PatientPortal = () => {
   useEffect(() => {
     if (user?.email) {
       fetchAppointments();
+       fetchDoctors();
     }
   }, [user?.email]);
+ 
+   const fetchDoctors = async () => {
+     try {
+       // Fetch available doctors from public view
+       const { data: profiles, error: profilesError } = await supabase
+         .from('public_doctor_profiles')
+         .select('user_id');
+ 
+       if (profilesError) throw profilesError;
+ 
+       if (!profiles || profiles.length === 0) {
+         setDoctors([]);
+         return;
+       }
+ 
+       const validUserIds = profiles.filter(p => p.user_id !== null).map(p => p.user_id!);
+ 
+       // Fetch names from profiles table
+       const { data: userProfiles, error: userError } = await supabase
+         .from('profiles')
+         .select('user_id, full_name')
+         .in('user_id', validUserIds);
+ 
+       if (userError) throw userError;
+ 
+       const doctorsList: DoctorInfo[] = (userProfiles || [])
+         .filter(p => p.user_id && p.full_name)
+         .map(p => ({
+           id: p.user_id!,
+           name: p.full_name || 'طبيب',
+         }));
+ 
+       setDoctors(doctorsList);
+     } catch (error) {
+       console.error('Error fetching doctors:', error);
+     }
+   };
 
   const handleRescheduleClick = (appointment: Appointment) => {
     setAppointmentToReschedule(appointment);
@@ -220,12 +269,21 @@ const PatientPortal = () => {
     navigate('/');
   };
 
-  const upcomingAppointments = appointments.filter(
+   const upcomingAppointmentsUnfiltered = appointments.filter(
     apt => apt.status !== 'cancelled' && apt.status !== 'completed' && new Date(apt.appointment_date) >= new Date()
   );
-  const pastAppointments = appointments.filter(
+   const pastAppointmentsUnfiltered = appointments.filter(
     apt => apt.status === 'completed' || apt.status === 'cancelled' || new Date(apt.appointment_date) < new Date()
   ).sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
+   
+   // Apply doctor filter
+   const upcomingAppointments = selectedDoctorFilter === 'all'
+     ? upcomingAppointmentsUnfiltered
+     : upcomingAppointmentsUnfiltered.filter(apt => apt.doctor_id === selectedDoctorFilter);
+ 
+   const pastAppointments = selectedDoctorFilter === 'all'
+     ? pastAppointmentsUnfiltered
+     : pastAppointmentsUnfiltered.filter(apt => apt.doctor_id === selectedDoctorFilter);
   
   const displayedPastAppointments = showAllPast ? pastAppointments : pastAppointments.slice(0, 5);
 
@@ -285,6 +343,38 @@ const PatientPortal = () => {
           </Card>
         ) : (
           <div className="space-y-8">
+             {/* Doctor Filter */}
+             {doctors.length > 0 && (
+               <Card>
+                 <CardContent className="p-4">
+                   <div className={`flex items-center gap-4 flex-wrap ${isRTL ? 'flex-row-reverse' : ''}`}>
+                     <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                       <Stethoscope className="h-4 w-4 text-primary" />
+                       <span className="text-sm font-medium">{t.portal.filterByDoctor || 'تصفية حسب الطبيب'}:</span>
+                     </div>
+                     <Select value={selectedDoctorFilter} onValueChange={setSelectedDoctorFilter}>
+                       <SelectTrigger className="w-[200px]">
+                         <SelectValue placeholder={t.portal.allDoctors || 'جميع الأطباء'} />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="all">{t.portal.allDoctors || 'جميع الأطباء'}</SelectItem>
+                         {doctors.map(doctor => (
+                           <SelectItem key={doctor.id} value={doctor.id}>
+                             {doctor.name}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                     {selectedDoctorFilter !== 'all' && (
+                       <Button variant="ghost" size="sm" onClick={() => setSelectedDoctorFilter('all')}>
+                         {t.portal.clearFilter || 'مسح الفلتر'}
+                       </Button>
+                     )}
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
+ 
             {/* Upcoming Appointments */}
             <div>
               <h2 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -320,6 +410,11 @@ const PatientPortal = () => {
                                 {appointment.appointment_time}
                               </span>
                             </div>
+                             {appointment.doctor_id && (
+                               <div className={`flex items-center gap-2 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                 <DoctorNameDisplay doctorId={appointment.doctor_id} showSpecialty={false} />
+                               </div>
+                             )}
                             {appointment.notes && (
                               <p className="text-sm text-muted-foreground">{appointment.notes}</p>
                             )}

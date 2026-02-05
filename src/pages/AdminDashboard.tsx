@@ -74,6 +74,7 @@ import {
 import { AppointmentCalendar } from '@/components/AppointmentCalendar';
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments';
 import { DoctorSelect } from '@/components/DoctorSelect';
+ import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
 import { ScheduledJobsSection } from '@/components/ScheduledJobsSection';
 import '@/styles/calendar.css';
 
@@ -1297,39 +1298,7 @@ const AdminDashboard = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <DoctorSelect
-                                  value={appointment.doctor_id || undefined}
-                                  onValueChange={async (doctorId) => {
-                                    try {
-                                      const { error } = await supabase
-                                        .from('appointments')
-                                        .update({ doctor_id: doctorId || null })
-                                        .eq('id', appointment.id);
-                                      
-                                      if (error) throw error;
-                                      
-                                      setAppointments(prev =>
-                                        prev.map(apt =>
-                                          apt.id === appointment.id
-                                            ? { ...apt, doctor_id: doctorId || null }
-                                            : apt
-                                        )
-                                      );
-                                      
-                                      toast({
-                                        title: 'تم التحديث',
-                                        description: 'تم تعيين الطبيب للموعد',
-                                      });
-                                    } catch (error) {
-                                      console.error('Error assigning doctor:', error);
-                                      toast({
-                                        title: 'خطأ',
-                                        description: 'فشل في تعيين الطبيب',
-                                        variant: 'destructive',
-                                      });
-                                    }
-                                  }}
-                                />
+                                 <DoctorNameDisplay doctorId={appointment.doctor_id} />
                               </TableCell>
                               <TableCell>
                                 <Badge variant={getStatusBadgeVariant(appointment.status)}>
