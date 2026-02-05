@@ -195,6 +195,12 @@ const AdminDashboard = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [isNotifyingWaitlist, setIsNotifyingWaitlist] = useState(false);
   const [isSendingSMSReminders, setIsSendingSMSReminders] = useState(false);
+  
+  // Assign doctor state
+  const [assignDoctorDialogOpen, setAssignDoctorDialogOpen] = useState(false);
+  const [appointmentToAssignDoctor, setAppointmentToAssignDoctor] = useState<Appointment | null>(null);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string | undefined>(undefined);
+  const [isAssigningDoctor, setIsAssigningDoctor] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -963,6 +969,52 @@ const AdminDashboard = () => {
     }
   };
 
+  // Assign doctor to appointment
+  const handleAssignDoctorClick = (appointment: Appointment) => {
+    setAppointmentToAssignDoctor(appointment);
+    setSelectedDoctorId(appointment.doctor_id || undefined);
+    setAssignDoctorDialogOpen(true);
+  };
+
+  const confirmAssignDoctor = async () => {
+    if (!appointmentToAssignDoctor) return;
+    
+    setIsAssigningDoctor(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ doctor_id: selectedDoctorId || null })
+        .eq('id', appointmentToAssignDoctor.id);
+
+      if (error) throw error;
+
+      setAppointments(prev =>
+        prev.map(apt =>
+          apt.id === appointmentToAssignDoctor.id
+            ? { ...apt, doctor_id: selectedDoctorId || null }
+            : apt
+        )
+      );
+
+      toast({
+        title: 'تم تعيين الطبيب',
+        description: `تم تحديث الطبيب المعالج لموعد ${appointmentToAssignDoctor.patient_name}.`,
+      });
+    } catch (error) {
+      console.error('Error assigning doctor:', error);
+      toast({
+        title: 'خطأ',
+        description: 'فشل في تعيين الطبيب.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAssigningDoctor(false);
+      setAssignDoctorDialogOpen(false);
+      setAppointmentToAssignDoctor(null);
+      setSelectedDoctorId(undefined);
+    }
+  };
+
   // Stats
   const totalAppointments = appointments.length;
   const pendingCount = appointments.filter(a => a.status === 'pending').length;
@@ -1335,6 +1387,10 @@ const AdminDashboard = () => {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleAssignDoctorClick(appointment)}>
+                                        <Stethoscope className="h-4 w-4 mr-2" />
+                                        تعيين الطبيب
+                                      </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => handleRescheduleClick(appointment)}>
                                         <Edit className="h-4 w-4 mr-2" />
                                         Reschedule
@@ -1731,6 +1787,57 @@ const AdminDashboard = () => {
                 </>
               ) : (
                 'Save Changes'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Doctor Dialog */}
+      <Dialog open={assignDoctorDialogOpen} onOpenChange={setAssignDoctorDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 text-primary" />
+              تعيين الطبيب المعالج
+            </DialogTitle>
+            <DialogDescription>
+              {appointmentToAssignDoctor && (
+                <>تعيين طبيب لموعد <span className="font-medium">{appointmentToAssignDoctor.patient_name}</span></>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Label className="text-sm font-medium mb-2 block">اختر الطبيب</Label>
+            <DoctorSelect
+              value={selectedDoctorId}
+              onValueChange={setSelectedDoctorId}
+              disabled={isAssigningDoctor}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAssignDoctorDialogOpen(false)}
+              disabled={isAssigningDoctor}
+              className="rounded-xl"
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={confirmAssignDoctor}
+              disabled={isAssigningDoctor}
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity rounded-xl"
+            >
+              {isAssigningDoctor ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                'حفظ التعيين'
               )}
             </Button>
           </DialogFooter>
