@@ -565,6 +565,11 @@ export const ar = {
     appointmentCancelled: 'تم إلغاء الموعد',
     cancelledDesc: 'تم إلغاء موعدك.',
     errorCancel: 'فشل في إلغاء الموعد.',
+     
+     // Doctor filter
+     filterByDoctor: 'تصفية حسب الطبيب',
+     allDoctors: 'جميع الأطباء',
+     clearFilter: 'مسح الفلتر',
   },
 
   // Auth Page
@@ -1029,6 +1034,11 @@ export const en = {
     appointmentCancelled: 'Appointment Cancelled',
     cancelledDesc: 'Your appointment has been cancelled.',
     errorCancel: 'Failed to cancel appointment.',
+     
+     // Doctor filter
+     filterByDoctor: 'Filter by Doctor',
+     allDoctors: 'All Doctors',
+     clearFilter: 'Clear Filter',
   },
 
   // Auth Page
