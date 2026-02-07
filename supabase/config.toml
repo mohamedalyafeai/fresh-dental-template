@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.send-schedule-update-notification]
 verify_jwt = false
+
+[functions.send-doctor-assignment-notification]
+verify_jwt = false
