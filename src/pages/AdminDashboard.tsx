@@ -988,6 +988,44 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
+      // Send notification email if a doctor is assigned
+      if (selectedDoctorId) {
+        try {
+          // Fetch doctor info
+          const { data: doctorProfile } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('user_id', selectedDoctorId)
+            .single();
+
+          const wasReassignment = appointmentToAssignDoctor.doctor_id !== null && 
+                                   appointmentToAssignDoctor.doctor_id !== selectedDoctorId;
+
+          // Get auth session for the function call
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session && doctorProfile) {
+            await supabase.functions.invoke('send-doctor-assignment-notification', {
+              body: {
+                appointmentId: appointmentToAssignDoctor.id,
+                patientName: appointmentToAssignDoctor.patient_name,
+                patientEmail: appointmentToAssignDoctor.patient_email,
+                doctorName: doctorProfile.full_name || 'الطبيب المعالج',
+                doctorEmail: doctorProfile.email,
+                service: appointmentToAssignDoctor.service,
+                appointmentDate: appointmentToAssignDoctor.appointment_date,
+                appointmentTime: appointmentToAssignDoctor.appointment_time,
+                isReassignment: wasReassignment,
+              },
+            });
+            console.log('Doctor assignment notification sent');
+          }
+        } catch (notifError) {
+          console.error('Error sending notification:', notifError);
+          // Don't fail the whole operation if notification fails
+        }
+      }
+
       setAppointments(prev =>
         prev.map(apt =>
           apt.id === appointmentToAssignDoctor.id
