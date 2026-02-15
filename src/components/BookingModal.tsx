@@ -618,6 +618,10 @@ const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                       {doctors.map((doctor) => (
                         <SelectItem key={doctor.id} value={doctor.id}>
                           <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "h-2.5 w-2.5 rounded-full shrink-0",
+                              doctor.is_available ? "bg-green-500" : "bg-red-500"
+                            )} />
                             <Stethoscope className="h-4 w-4 text-primary" />
                             <span className="font-medium">{doctor.name}</span>
                             {doctor.specialty && (
