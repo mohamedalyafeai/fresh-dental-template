@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Stethoscope } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DoctorProfile {
   id: string | null;
