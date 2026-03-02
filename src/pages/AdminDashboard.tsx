@@ -1091,7 +1091,23 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button variant="outline" onClick={() => navigate('/admin/dental-chart')} className="rounded-xl">
+              <Sparkles className="h-4 w-4 ml-2" />
+              مخطط الأسنان
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/admin/treatment-plans')} className="rounded-xl">
+              <FileText className="h-4 w-4 ml-2" />
+              خطط العلاج
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/admin/invoices')} className="rounded-xl">
+              <DollarSign className="h-4 w-4 ml-2" />
+              الفواتير
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/admin/prescriptions')} className="rounded-xl">
+              <Activity className="h-4 w-4 ml-2" />
+              الوصفات
+            </Button>
             <Button variant="outline" onClick={() => navigate('/admin/profile')} className="rounded-xl">
               <User className="h-4 w-4 ml-2" />
               ملفي الشخصي
