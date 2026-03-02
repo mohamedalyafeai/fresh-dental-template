@@ -137,6 +137,36 @@ export type Database = {
         }
         Relationships: []
       }
+      dental_charts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          patient_email: string
+          patient_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_email: string
+          patient_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_email?: string
+          patient_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       doctor_days_off: {
         Row: {
           created_at: string
@@ -317,6 +347,112 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          tooth_number: number | null
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          tooth_number?: number | null
+          total?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          tooth_number?: number | null
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount_paid: number | null
+          created_at: string
+          created_by: string | null
+          discount: number | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          notes: string | null
+          patient_email: string
+          patient_name: string
+          status: string
+          subtotal: number
+          tax: number | null
+          total: number
+          treatment_plan_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string
+          created_by?: string | null
+          discount?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          notes?: string | null
+          patient_email: string
+          patient_name: string
+          status?: string
+          subtotal?: number
+          tax?: number | null
+          total?: number
+          treatment_plan_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string
+          created_by?: string | null
+          discount?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          notes?: string | null
+          patient_email?: string
+          patient_name?: string
+          status?: string
+          subtotal?: number
+          tax?: number | null
+          total?: number
+          treatment_plan_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           appointment_reminders: boolean
@@ -370,6 +506,86 @@ export type Database = {
           note_content?: string
           patient_email?: string
           patient_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prescription_items: {
+        Row: {
+          created_at: string
+          dosage: string
+          duration: string
+          frequency: string
+          id: string
+          instructions: string | null
+          medication_name: string
+          prescription_id: string
+        }
+        Insert: {
+          created_at?: string
+          dosage: string
+          duration: string
+          frequency: string
+          id?: string
+          instructions?: string | null
+          medication_name: string
+          prescription_id: string
+        }
+        Update: {
+          created_at?: string
+          dosage?: string
+          duration?: string
+          frequency?: string
+          id?: string
+          instructions?: string | null
+          medication_name?: string
+          prescription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescription_items_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescriptions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          diagnosis: string | null
+          doctor_id: string | null
+          id: string
+          notes: string | null
+          patient_email: string
+          patient_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          diagnosis?: string | null
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_email: string
+          patient_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          diagnosis?: string | null
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_email?: string
+          patient_name?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -430,6 +646,136 @@ export type Database = {
           last_run?: string | null
           last_status?: string | null
           schedule?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tooth_conditions: {
+        Row: {
+          chart_id: string
+          condition: string
+          created_at: string
+          id: string
+          notes: string | null
+          surface: string | null
+          tooth_number: number
+          updated_at: string
+        }
+        Insert: {
+          chart_id: string
+          condition?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          surface?: string | null
+          tooth_number: number
+          updated_at?: string
+        }
+        Update: {
+          chart_id?: string
+          condition?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          surface?: string | null
+          tooth_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tooth_conditions_chart_id_fkey"
+            columns: ["chart_id"]
+            isOneToOne: false
+            referencedRelation: "dental_charts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatment_plan_items: {
+        Row: {
+          completed_at: string | null
+          cost: number | null
+          created_at: string
+          description: string | null
+          id: string
+          plan_id: string
+          procedure_name: string
+          status: string
+          step_order: number
+          tooth_number: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          plan_id: string
+          procedure_name: string
+          status?: string
+          step_order?: number
+          tooth_number?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          plan_id?: string
+          procedure_name?: string
+          status?: string
+          step_order?: number
+          tooth_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_plan_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatment_plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          doctor_id: string | null
+          id: string
+          patient_email: string
+          patient_name: string
+          status: string
+          title: string
+          total_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          doctor_id?: string | null
+          id?: string
+          patient_email: string
+          patient_name: string
+          status?: string
+          title: string
+          total_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          doctor_id?: string | null
+          id?: string
+          patient_email?: string
+          patient_name?: string
+          status?: string
+          title?: string
+          total_cost?: number | null
           updated_at?: string
         }
         Relationships: []
