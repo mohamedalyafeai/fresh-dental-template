@@ -82,10 +82,28 @@ const PrescriptionsPage = () => {
     }).select().single();
     if (error) { toast({ title: 'خطأ', variant: 'destructive' }); return; }
     setNewRxOpen(false);
+    const savedForm = { ...rxForm };
     setRxForm({ patient_name: '', patient_email: '', diagnosis: '', notes: '' });
     fetchPrescriptions();
     if (data) selectRx(data);
     toast({ title: 'تم إنشاء الوصفة' });
+
+    // Send email notification (will be sent again with medications when they're added)
+    if (data) {
+      try {
+        await supabase.functions.invoke('send-patient-notification', {
+          body: {
+            type: 'prescription',
+            patientName: savedForm.patient_name,
+            patientEmail: savedForm.patient_email,
+            data: {
+              diagnosis: savedForm.diagnosis,
+              medications: [],
+            },
+          },
+        });
+      } catch (e) { console.error('Failed to send prescription notification:', e); }
+    }
   };
 
   const addMed = async () => {

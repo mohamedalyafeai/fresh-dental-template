@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Receipt } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Receipt, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Invoice {
@@ -69,6 +70,27 @@ export const PatientInvoices = ({ userEmail }: { userEmail: string }) => {
     setExpandedInvoice(invoiceId);
   };
 
+  const printInvoice = (inv: Invoice) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const items = invoiceItems[inv.id] || [];
+    const remaining = inv.total - (inv.amount_paid || 0);
+    printWindow.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>فاتورة ${inv.invoice_number}</title>
+    <style>body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{color:#06B6D4}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ddd;padding:10px;text-align:right}th{background:#f3f4f6}.total{font-size:18px;font-weight:bold;margin-top:20px}</style></head><body>
+    <h1>فاتورة رقم: ${inv.invoice_number}</h1><p>التاريخ: ${format(new Date(inv.created_at), 'yyyy/MM/dd')}</p>
+    ${inv.due_date ? `<p>تاريخ الاستحقاق: ${format(new Date(inv.due_date), 'yyyy/MM/dd')}</p>` : ''}
+    <table><tr><th>الوصف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr>
+    ${items.map(i => `<tr><td>${i.description}</td><td>${i.quantity}</td><td>${i.unit_price.toFixed(2)}</td><td>${i.total.toFixed(2)}</td></tr>`).join('')}</table>
+    <div class="total">الإجمالي: ${inv.total.toFixed(2)} ر.س</div>
+    <p>المدفوع: ${(inv.amount_paid || 0).toFixed(2)} ر.س</p>
+    <p>المتبقي: ${remaining.toFixed(2)} ر.س</p>
+    ${inv.notes ? `<p>ملاحظات: ${inv.notes}</p>` : ''}
+    <hr style="margin-top:60px"><p style="text-align:center;color:#999">BrightSmile Dental</p>
+    </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   if (invoices.length === 0) {
@@ -91,11 +113,18 @@ export const PatientInvoices = ({ userEmail }: { userEmail: string }) => {
         const remaining = inv.total - (inv.amount_paid || 0);
 
         return (
-          <Card key={inv.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => loadItems(inv.id)}>
+          <Card key={inv.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">{inv.invoice_number}</CardTitle>
-                <Badge variant={st.variant}>{st.label}</Badge>
+                <div className="cursor-pointer flex-1" onClick={() => loadItems(inv.id)}>
+                  <CardTitle className="text-base">{inv.invoice_number}</CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); printInvoice(inv); }}>
+                    <Printer className="h-3.5 w-3.5" />
+                  </Button>
+                  <Badge variant={st.variant}>{st.label}</Badge>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground">
                 {format(new Date(inv.created_at), 'yyyy/MM/dd')}

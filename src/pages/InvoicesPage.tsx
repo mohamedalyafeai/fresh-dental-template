@@ -105,6 +105,25 @@ const InvoicesPage = () => {
     fetchInvoices();
     if (data) selectInvoice(data);
     toast({ title: 'تم إنشاء الفاتورة' });
+
+    // Send email notification
+    if (data) {
+      try {
+        await supabase.functions.invoke('send-patient-notification', {
+          body: {
+            type: 'invoice',
+            patientName: invForm.patient_name,
+            patientEmail: invForm.patient_email,
+            data: {
+              invoiceNumber: data.invoice_number,
+              total: data.total,
+              dueDate: null,
+              items: [],
+            },
+          },
+        });
+      } catch (e) { console.error('Failed to send invoice notification:', e); }
+    }
   };
 
   const addItem = async () => {

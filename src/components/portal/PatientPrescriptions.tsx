@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Pill } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Pill, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Prescription {
@@ -64,6 +65,25 @@ export const PatientPrescriptions = ({ userEmail }: { userEmail: string }) => {
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
+  const printPrescription = (rx: Prescription) => {
+    const items = prescriptionItems[rx.id] || [];
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>وصفة طبية</title>
+    <style>body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{color:#8B5CF6}.med{background:#f9fafb;padding:12px;border-radius:8px;margin:8px 0}.sig{margin-top:80px;border-top:1px solid #ddd;padding-top:10px}</style></head><body>
+    <h1>💊 وصفة طبية</h1>
+    <p>التاريخ: ${format(new Date(rx.created_at), 'yyyy/MM/dd')}</p>
+    ${rx.diagnosis ? `<p><strong>التشخيص:</strong> ${rx.diagnosis}</p>` : ''}
+    <h3>الأدوية:</h3>
+    ${items.map(m => `<div class="med"><strong>${m.medication_name}</strong><br>الجرعة: ${m.dosage} | التكرار: ${m.frequency} | المدة: ${m.duration}${m.instructions ? `<br>تعليمات: ${m.instructions}` : ''}</div>`).join('')}
+    ${rx.notes ? `<p><strong>ملاحظات:</strong> ${rx.notes}</p>` : ''}
+    <div class="sig"><p>توقيع الطبيب: ________________</p></div>
+    <hr><p style="text-align:center;color:#999">BrightSmile Dental</p>
+    </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   if (prescriptions.length === 0) {
     return (
       <Card>
@@ -83,13 +103,20 @@ export const PatientPrescriptions = ({ userEmail }: { userEmail: string }) => {
         const isExpanded = expandedRx === rx.id;
 
         return (
-          <Card key={rx.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => loadItems(rx.id)}>
+          <Card key={rx.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                  وصفة بتاريخ {format(new Date(rx.created_at), 'yyyy/MM/dd')}
-                </CardTitle>
-                <Badge variant={st.variant}>{st.label}</Badge>
+                <div className="cursor-pointer flex-1" onClick={() => loadItems(rx.id)}>
+                  <CardTitle className="text-base">
+                    وصفة بتاريخ {format(new Date(rx.created_at), 'yyyy/MM/dd')}
+                  </CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); loadItems(rx.id).then(() => printPrescription(rx)); }}>
+                    <Printer className="h-3.5 w-3.5" />
+                  </Button>
+                  <Badge variant={st.variant}>{st.label}</Badge>
+                </div>
               </div>
               {rx.diagnosis && <p className="text-sm text-muted-foreground">التشخيص: {rx.diagnosis}</p>}
             </CardHeader>
