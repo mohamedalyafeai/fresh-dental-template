@@ -11,12 +11,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope } from 'lucide-react';
+import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DoctorApplicationForm from '@/components/DoctorApplicationForm';
- import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
+import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
+import { PatientTreatmentPlans } from '@/components/portal/PatientTreatmentPlans';
+import { PatientInvoices } from '@/components/portal/PatientInvoices';
+import { PatientPrescriptions } from '@/components/portal/PatientPrescriptions';
  
  interface DoctorInfo {
    id: string;
@@ -326,6 +330,27 @@ const PatientPortal = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="appointments" dir={isRTL ? 'rtl' : 'ltr'}>
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="appointments" className="flex items-center gap-1.5">
+              <CalendarIcon2 className="h-4 w-4" />
+              <span className="hidden sm:inline">المواعيد</span>
+            </TabsTrigger>
+            <TabsTrigger value="treatments" className="flex items-center gap-1.5">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden sm:inline">خطط العلاج</span>
+            </TabsTrigger>
+            <TabsTrigger value="invoices" className="flex items-center gap-1.5">
+              <Receipt className="h-4 w-4" />
+              <span className="hidden sm:inline">الفواتير</span>
+            </TabsTrigger>
+            <TabsTrigger value="prescriptions" className="flex items-center gap-1.5">
+              <Pill className="h-4 w-4" />
+              <span className="hidden sm:inline">الوصفات</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="appointments">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -420,19 +445,11 @@ const PatientPortal = () => {
                             )}
                           </div>
                           <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRescheduleClick(appointment)}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleRescheduleClick(appointment)}>
                               <Edit className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                               {t.portal.reschedule}
                             </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleCancelClick(appointment)}
-                            >
+                            <Button variant="destructive" size="sm" onClick={() => handleCancelClick(appointment)}>
                               <XCircle className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                               {t.portal.cancel}
                             </Button>
@@ -453,11 +470,7 @@ const PatientPortal = () => {
                   {t.portal.appointmentHistory} ({pastAppointments.length})
                 </h2>
                 {pastAppointments.length > 5 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllPast(!showAllPast)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setShowAllPast(!showAllPast)}>
                     {showAllPast ? t.portal.showLess : t.portal.showAll}
                   </Button>
                 )}
@@ -501,6 +514,20 @@ const PatientPortal = () => {
             </div>
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="treatments">
+            {user?.email && <PatientTreatmentPlans userEmail={user.email} />}
+          </TabsContent>
+
+          <TabsContent value="invoices">
+            {user?.email && <PatientInvoices userEmail={user.email} />}
+          </TabsContent>
+
+          <TabsContent value="prescriptions">
+            {user?.email && <PatientPrescriptions userEmail={user.email} />}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Reschedule Dialog */}
