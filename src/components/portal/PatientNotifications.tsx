@@ -7,12 +7,13 @@ import { Loader2, Bell, BellOff, Check, CheckCheck, Receipt, Pill, ClipboardList
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
-interface Notification {
+interface PatientNotification {
   id: string;
   title: string;
   message: string;
   type: string;
   is_read: boolean;
+  patient_email: string;
   created_at: string;
 }
 
