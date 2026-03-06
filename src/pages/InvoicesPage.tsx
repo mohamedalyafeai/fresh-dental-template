@@ -106,20 +106,26 @@ const InvoicesPage = () => {
     if (data) selectInvoice(data);
     toast({ title: 'تم إنشاء الفاتورة' });
 
-    // Send email notification
     if (data) {
+      // Create in-app notification
+      try {
+        await supabase.from('patient_notifications').insert({
+          patient_email: invForm.patient_email,
+          title: 'فاتورة جديدة',
+          message: `تم إنشاء فاتورة جديدة رقم ${data.invoice_number}`,
+          type: 'invoice',
+          related_id: data.id,
+        });
+      } catch (e) { console.error('Failed to create notification:', e); }
+
+      // Send email notification
       try {
         await supabase.functions.invoke('send-patient-notification', {
           body: {
             type: 'invoice',
             patientName: invForm.patient_name,
             patientEmail: invForm.patient_email,
-            data: {
-              invoiceNumber: data.invoice_number,
-              total: data.total,
-              dueDate: null,
-              items: [],
-            },
+            data: { invoiceNumber: data.invoice_number, total: data.total, dueDate: null, items: [] },
           },
         });
       } catch (e) { console.error('Failed to send invoice notification:', e); }
