@@ -336,7 +336,7 @@ const PatientPortal = () => {
         <PatientDashboard userEmail={user.email || ''} />
 
         <Tabs defaultValue="appointments" dir={isRTL ? 'rtl' : 'ltr'}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="appointments" className="flex items-center gap-1.5">
               <CalendarIcon2 className="h-4 w-4" />
               <span className="hidden sm:inline">المواعيد</span>
@@ -352,6 +352,10 @@ const PatientPortal = () => {
             <TabsTrigger value="prescriptions" className="flex items-center gap-1.5">
               <Pill className="h-4 w-4" />
               <span className="hidden sm:inline">الوصفات</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-1.5">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">الإشعارات</span>
             </TabsTrigger>
           </TabsList>
 
@@ -531,6 +535,10 @@ const PatientPortal = () => {
 
           <TabsContent value="prescriptions">
             {user?.email && <PatientPrescriptions userEmail={user.email} />}
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            {user?.email && <PatientNotifications userEmail={user.email} />}
           </TabsContent>
         </Tabs>
       </main>
