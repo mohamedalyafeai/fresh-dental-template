@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill } from 'lucide-react';
+import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DoctorApplicationForm from '@/components/DoctorApplicationForm';
 import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
@@ -22,6 +22,7 @@ import { PatientTreatmentPlans } from '@/components/portal/PatientTreatmentPlans
 import { PatientInvoices } from '@/components/portal/PatientInvoices';
 import { PatientPrescriptions } from '@/components/portal/PatientPrescriptions';
 import { PatientDashboard } from '@/components/portal/PatientDashboard';
+import { PatientNotifications } from '@/components/portal/PatientNotifications';
  
  interface DoctorInfo {
    id: string;
@@ -335,7 +336,7 @@ const PatientPortal = () => {
         <PatientDashboard userEmail={user.email || ''} />
 
         <Tabs defaultValue="appointments" dir={isRTL ? 'rtl' : 'ltr'}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="appointments" className="flex items-center gap-1.5">
               <CalendarIcon2 className="h-4 w-4" />
               <span className="hidden sm:inline">المواعيد</span>
@@ -351,6 +352,10 @@ const PatientPortal = () => {
             <TabsTrigger value="prescriptions" className="flex items-center gap-1.5">
               <Pill className="h-4 w-4" />
               <span className="hidden sm:inline">الوصفات</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-1.5">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">الإشعارات</span>
             </TabsTrigger>
           </TabsList>
 
@@ -530,6 +535,10 @@ const PatientPortal = () => {
 
           <TabsContent value="prescriptions">
             {user?.email && <PatientPrescriptions userEmail={user.email} />}
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            {user?.email && <PatientNotifications userEmail={user.email} />}
           </TabsContent>
         </Tabs>
       </main>

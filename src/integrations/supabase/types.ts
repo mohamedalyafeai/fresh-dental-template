@@ -510,6 +510,39 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          patient_email: string
+          related_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          patient_email: string
+          related_id?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          patient_email?: string
+          related_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       prescription_items: {
         Row: {
           created_at: string

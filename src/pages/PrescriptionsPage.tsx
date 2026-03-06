@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2, Plus, Trash2, Printer, Pill, FileText, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2, Printer, Pill, FileText, Search, Download } from 'lucide-react';
 
 interface Prescription {
   id: string;
@@ -88,18 +88,26 @@ const PrescriptionsPage = () => {
     if (data) selectRx(data);
     toast({ title: 'تم إنشاء الوصفة' });
 
-    // Send email notification (will be sent again with medications when they're added)
     if (data) {
+      // Create in-app notification
+      try {
+        await supabase.from('patient_notifications').insert({
+          patient_email: savedForm.patient_email,
+          title: 'وصفة طبية جديدة',
+          message: `تم إنشاء وصفة طبية جديدة${savedForm.diagnosis ? ` - التشخيص: ${savedForm.diagnosis}` : ''}`,
+          type: 'prescription',
+          related_id: data.id,
+        });
+      } catch (e) { console.error('Failed to create notification:', e); }
+
+      // Send email notification
       try {
         await supabase.functions.invoke('send-patient-notification', {
           body: {
             type: 'prescription',
             patientName: savedForm.patient_name,
             patientEmail: savedForm.patient_email,
-            data: {
-              diagnosis: savedForm.diagnosis,
-              medications: [],
-            },
+            data: { diagnosis: savedForm.diagnosis, medications: [] },
           },
         });
       } catch (e) { console.error('Failed to send prescription notification:', e); }
@@ -132,6 +140,28 @@ const PrescriptionsPage = () => {
   };
 
   const printRx = () => window.print();
+
+  const exportRxPDF = () => {
+    if (!selected) return;
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>وصفة طبية - ${selected.patient_name}</title>
+    <style>body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{color:#06B6D4}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ddd;padding:10px;text-align:right}th{background:#f3f4f6}.diagnosis{background:#f0f9ff;padding:12px;border-radius:8px;margin:15px 0}@media print{body{padding:20px}}</style></head><body>
+    <h1>وصفة طبية</h1>
+    <p><strong>المريض:</strong> ${selected.patient_name} | <strong>البريد:</strong> ${selected.patient_email}</p>
+    <p><strong>التاريخ:</strong> ${new Date(selected.created_at).toLocaleDateString('ar')}</p>
+    ${selected.diagnosis ? `<div class="diagnosis"><strong>التشخيص:</strong> ${selected.diagnosis}</div>` : ''}
+    ${items.length > 0 ? `<table><tr><th>الدواء</th><th>الجرعة</th><th>التكرار</th><th>المدة</th><th>تعليمات</th></tr>
+    ${items.map(m => `<tr><td>${m.medication_name}</td><td>${m.dosage}</td><td>${m.frequency}</td><td>${m.duration}</td><td>${m.instructions || '-'}</td></tr>`).join('')}</table>` : ''}
+    ${selected.notes ? `<p style="margin-top:20px"><strong>ملاحظات:</strong> ${selected.notes}</p>` : ''}
+    <div style="margin-top:60px;border-top:1px solid #ddd;padding-top:20px">
+      <p>توقيع الطبيب: ________________</p>
+    </div>
+    <hr style="margin-top:40px"><p style="text-align:center;color:#999">BrightSmile Dental</p>
+    </body></html>`);
+    w.document.close();
+    w.print();
+  };
 
   const filtered = prescriptions.filter(rx =>
     rx.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -198,6 +228,7 @@ const PrescriptionsPage = () => {
                     </div>
                     <div className="flex gap-2 print:hidden">
                       <Button variant="outline" size="sm" onClick={printRx} className="rounded-xl"><Printer className="h-4 w-4 ml-1" /> طباعة</Button>
+                      <Button variant="outline" size="sm" onClick={exportRxPDF} className="rounded-xl"><Download className="h-4 w-4 ml-1" /> تصدير PDF</Button>
                       <Button variant="destructive" size="icon" className="rounded-xl h-9 w-9" onClick={() => deleteRx(selected.id)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>
