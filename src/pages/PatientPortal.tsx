@@ -21,6 +21,7 @@ import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
 import { PatientTreatmentPlans } from '@/components/portal/PatientTreatmentPlans';
 import { PatientInvoices } from '@/components/portal/PatientInvoices';
 import { PatientPrescriptions } from '@/components/portal/PatientPrescriptions';
+import { PatientDashboard } from '@/components/portal/PatientDashboard';
  
  interface DoctorInfo {
    id: string;
@@ -330,6 +331,9 @@ const PatientPortal = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Dashboard Stats */}
+        <PatientDashboard userEmail={user.email || ''} />
+
         <Tabs defaultValue="appointments" dir={isRTL ? 'rtl' : 'ltr'}>
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="appointments" className="flex items-center gap-1.5">
