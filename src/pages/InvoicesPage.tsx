@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2, Plus, Trash2, Printer, Receipt, DollarSign, FileText, CreditCard, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2, Printer, Receipt, DollarSign, FileText, CreditCard, Clock, Download } from 'lucide-react';
 
 interface Invoice {
   id: string;
@@ -191,6 +191,35 @@ const InvoicesPage = () => {
   };
 
   const printInvoice = () => window.print();
+
+  const exportInvoicePDF = () => {
+    if (!selectedInvoice) return;
+    const inv = selectedInvoice;
+    const remaining = Number(inv.total) - Number(inv.amount_paid);
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>فاتورة ${inv.invoice_number}</title>
+    <style>body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{color:#06B6D4;margin-bottom:5px}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ddd;padding:10px;text-align:right}th{background:#f3f4f6}.total-section{margin-top:20px;max-width:300px;margin-right:auto}.total-row{display:flex;justify-content:space-between;padding:4px 0}.grand{font-size:18px;font-weight:bold;border-top:2px solid #333;padding-top:8px}@media print{body{padding:20px}}</style></head><body>
+    <h1>فاتورة رقم: ${inv.invoice_number}</h1>
+    <p>المريض: ${inv.patient_name} | البريد: ${inv.patient_email}</p>
+    <p>التاريخ: ${new Date(inv.created_at).toLocaleDateString('ar')}</p>
+    ${inv.due_date ? `<p>تاريخ الاستحقاق: ${new Date(inv.due_date).toLocaleDateString('ar')}</p>` : ''}
+    <table><tr><th>الوصف</th><th>السن</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr>
+    ${invItems.map(i => `<tr><td>${i.description}</td><td>${i.tooth_number || '-'}</td><td>${i.quantity}</td><td>${Number(i.unit_price).toFixed(2)}</td><td>${Number(i.total).toFixed(2)}</td></tr>`).join('')}</table>
+    <div class="total-section">
+      <div class="total-row"><span>المجموع الفرعي:</span><span>${Number(inv.subtotal).toFixed(2)} ر.س</span></div>
+      <div class="total-row"><span>الخصم:</span><span style="color:red">-${Number(inv.discount).toFixed(2)} ر.س</span></div>
+      <div class="total-row"><span>الضريبة:</span><span>+${Number(inv.tax).toFixed(2)} ر.س</span></div>
+      <div class="total-row grand"><span>الإجمالي:</span><span>${Number(inv.total).toFixed(2)} ر.س</span></div>
+      <div class="total-row"><span>المدفوع:</span><span style="color:green">${Number(inv.amount_paid).toFixed(2)} ر.س</span></div>
+      <div class="total-row"><span>المتبقي:</span><span style="color:orange">${remaining.toFixed(2)} ر.س</span></div>
+    </div>
+    ${inv.notes ? `<p style="margin-top:30px">ملاحظات: ${inv.notes}</p>` : ''}
+    <hr style="margin-top:60px"><p style="text-align:center;color:#999">BrightSmile Dental</p>
+    </body></html>`);
+    w.document.close();
+    w.print();
+  };
 
   const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total), 0);
   const totalPending = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled').reduce((s, i) => s + Number(i.total) - Number(i.amount_paid), 0);
