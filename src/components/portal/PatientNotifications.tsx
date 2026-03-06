@@ -25,7 +25,7 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 export const PatientNotifications = ({ userEmail }: { userEmail: string }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<PatientNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export const PatientNotifications = ({ userEmail }: { userEmail: string }) => {
         schema: 'public',
         table: 'patient_notifications',
       }, (payload) => {
-        const newNotif = payload.new as Notification;
+        const newNotif = payload.new as PatientNotification;
         if (newNotif.patient_email === userEmail) {
           setNotifications(prev => [newNotif, ...prev]);
         }
@@ -55,7 +55,7 @@ export const PatientNotifications = ({ userEmail }: { userEmail: string }) => {
       .eq('patient_email', userEmail)
       .order('created_at', { ascending: false })
       .limit(50);
-    setNotifications((data as Notification[]) || []);
+    setNotifications((data as PatientNotification[]) || []);
     setIsLoading(false);
   };
 
