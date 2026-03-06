@@ -21,6 +21,7 @@ import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
 import { PatientTreatmentPlans } from '@/components/portal/PatientTreatmentPlans';
 import { PatientInvoices } from '@/components/portal/PatientInvoices';
 import { PatientPrescriptions } from '@/components/portal/PatientPrescriptions';
+import { PatientDashboard } from '@/components/portal/PatientDashboard';
  
  interface DoctorInfo {
    id: string;
