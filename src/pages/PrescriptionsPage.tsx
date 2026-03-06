@@ -228,6 +228,7 @@ const PrescriptionsPage = () => {
                     </div>
                     <div className="flex gap-2 print:hidden">
                       <Button variant="outline" size="sm" onClick={printRx} className="rounded-xl"><Printer className="h-4 w-4 ml-1" /> طباعة</Button>
+                      <Button variant="outline" size="sm" onClick={exportRxPDF} className="rounded-xl"><Download className="h-4 w-4 ml-1" /> تصدير PDF</Button>
                       <Button variant="destructive" size="icon" className="rounded-xl h-9 w-9" onClick={() => deleteRx(selected.id)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>
