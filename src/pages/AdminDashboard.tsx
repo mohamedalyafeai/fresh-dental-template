@@ -1681,6 +1681,11 @@ const AdminDashboard = () => {
             <AppointmentAnalyticsChart appointments={appointments} />
           </TabsContent>
 
+          {/* Medical Records Tab */}
+          <TabsContent value="medical-records" className="space-y-6">
+            <MedicalRecordsManager />
+          </TabsContent>
+
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
             {/* Owner Analytics - Only for owners */}
