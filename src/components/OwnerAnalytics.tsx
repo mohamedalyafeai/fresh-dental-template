@@ -2,186 +2,120 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, TrendingUp, Users, Calendar, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Loader2, TrendingUp, Users, Calendar, DollarSign, ArrowUpRight, ArrowDownRight, Stethoscope } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, subDays } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { t } from '@/lib/translations';
-
-interface AppointmentStats {
-  total: number;
-  completed: number;
-  cancelled: number;
-  pending: number;
-}
-
-interface MonthlyData {
-  month: string;
-  appointments: number;
-  revenue: number;
-}
-
-interface ServiceData {
-  name: string;
-  value: number;
-}
-
-// Estimated revenue per service (in currency units)
-const SERVICE_PRICES: Record<string, number> = {
-  'General Dentistry': 150,
-  'Teeth Whitening': 300,
-  'Root Canal': 800,
-  'Emergency Care': 200,
-  'Dental Crowns': 1200,
-  'Cosmetic Dentistry': 500,
-  'طب الأسنان العام': 150,
-  'تبييض الأسنان': 300,
-  'علاج قناة الجذر': 800,
-  'الرعاية الطارئة': 200,
-  'تيجان الأسنان': 1200,
-  'طب الأسنان التجميلي': 500,
-};
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const OwnerAnalytics = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<AppointmentStats>({ total: 0, completed: 0, cancelled: 0, pending: 0 });
-  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-  const [serviceData, setServiceData] = useState<ServiceData[]>([]);
-  const [patientGrowth, setPatientGrowth] = useState<{ month: string; patients: number }[]>([]);
+  const [stats, setStats] = useState({ total: 0, completed: 0, cancelled: 0, pending: 0 });
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [serviceData, setServiceData] = useState<any[]>([]);
+  const [patientGrowth, setPatientGrowth] = useState<any[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [revenueChange, setRevenueChange] = useState(0);
   const [appointmentChange, setAppointmentChange] = useState(0);
+  const [doctorPerformance, setDoctorPerformance] = useState<any[]>([]);
+  const [invoiceStats, setInvoiceStats] = useState({ totalPaid: 0, totalDue: 0, totalInvoices: 0 });
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
+  useEffect(() => { fetchAnalytics(); }, []);
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      // Fetch all appointments
-      const { data: appointments, error } = await supabase
-        .from('appointments')
-        .select('*')
-        .order('created_at', { ascending: true });
+      const [appointmentsRes, invoicesRes, profilesRes] = await Promise.all([
+        supabase.from('appointments').select('*').order('created_at', { ascending: true }),
+        supabase.from('invoices').select('*'),
+        supabase.from('profiles').select('user_id, full_name'),
+      ]);
 
-      if (error) throw error;
-
-      // Calculate stats
+      const appointments = appointmentsRes.data || [];
+      const invoices = invoicesRes.data || [];
+      const profiles = profilesRes.data || [];
       const now = new Date();
-      const thisMonth = appointments?.filter(a => {
-        const date = new Date(a.created_at);
-        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-      }) || [];
-      
-      const lastMonth = appointments?.filter(a => {
-        const date = new Date(a.created_at);
-        const lastMonthDate = subMonths(now, 1);
-        return date.getMonth() === lastMonthDate.getMonth() && date.getFullYear() === lastMonthDate.getFullYear();
-      }) || [];
+
+      const thisMonth = appointments.filter(a => { const d = new Date(a.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+      const lastMonthDate = subMonths(now, 1);
+      const lastMonth = appointments.filter(a => { const d = new Date(a.created_at); return d.getMonth() === lastMonthDate.getMonth() && d.getFullYear() === lastMonthDate.getFullYear(); });
 
       setStats({
-        total: appointments?.length || 0,
-        completed: appointments?.filter(a => a.status === 'completed').length || 0,
-        cancelled: appointments?.filter(a => a.status === 'cancelled').length || 0,
-        pending: appointments?.filter(a => a.status === 'pending' || a.status === 'confirmed').length || 0,
+        total: appointments.length,
+        completed: appointments.filter(a => a.status === 'completed').length,
+        cancelled: appointments.filter(a => a.status === 'cancelled').length,
+        pending: appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length,
       });
 
-      // Calculate appointment change
-      if (lastMonth.length > 0) {
-        setAppointmentChange(Math.round(((thisMonth.length - lastMonth.length) / lastMonth.length) * 100));
-      }
+      if (lastMonth.length > 0) setAppointmentChange(Math.round(((thisMonth.length - lastMonth.length) / lastMonth.length) * 100));
 
-      // Monthly data for last 6 months
-      const monthly: MonthlyData[] = [];
+      const totalPaid = invoices.reduce((s, i) => s + (i.amount_paid || 0), 0);
+      const totalDue = invoices.reduce((s, i) => s + (i.total - (i.amount_paid || 0)), 0);
+      setInvoiceStats({ totalPaid, totalDue, totalInvoices: invoices.length });
+      setTotalRevenue(totalPaid);
+
+      const monthly: any[] = [];
       for (let i = 5; i >= 0; i--) {
-        const monthDate = subMonths(now, i);
-        const monthStart = startOfMonth(monthDate);
-        const monthEnd = endOfMonth(monthDate);
-        
-        const monthAppointments = appointments?.filter(a => {
-          const date = new Date(a.created_at);
-          return date >= monthStart && date <= monthEnd;
-        }) || [];
-
-        const revenue = monthAppointments.reduce((sum, a) => {
-          if (a.status === 'completed') {
-            return sum + (SERVICE_PRICES[a.service] || 200);
-          }
-          return sum;
-        }, 0);
-
+        const md = subMonths(now, i);
+        const ms = startOfMonth(md);
+        const me = endOfMonth(md);
+        const monthInvoices = invoices.filter(inv => { const d = new Date(inv.created_at); return d >= ms && d <= me; });
+        const monthAppts = appointments.filter(a => { const d = new Date(a.created_at); return d >= ms && d <= me; });
         monthly.push({
-          month: format(monthDate, 'MMM', { locale: ar }),
-          appointments: monthAppointments.length,
-          revenue,
+          month: format(md, 'MMM', { locale: ar }),
+          appointments: monthAppts.length,
+          revenue: monthInvoices.reduce((s, i) => s + (i.amount_paid || 0), 0),
+          invoiced: monthInvoices.reduce((s, i) => s + i.total, 0),
         });
       }
       setMonthlyData(monthly);
 
-      // Calculate total revenue and change
-      const currentMonthRevenue = monthly[monthly.length - 1]?.revenue || 0;
-      const lastMonthRevenue = monthly[monthly.length - 2]?.revenue || 0;
-      setTotalRevenue(monthly.reduce((sum, m) => sum + m.revenue, 0));
-      if (lastMonthRevenue > 0) {
-        setRevenueChange(Math.round(((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100));
-      }
+      const curRevenue = monthly[monthly.length - 1]?.revenue || 0;
+      const prevRevenue = monthly[monthly.length - 2]?.revenue || 0;
+      if (prevRevenue > 0) setRevenueChange(Math.round(((curRevenue - prevRevenue) / prevRevenue) * 100));
 
-      // Service breakdown
-      const serviceCount: Record<string, number> = {};
-      appointments?.forEach(a => {
-        serviceCount[a.service] = (serviceCount[a.service] || 0) + 1;
-      });
-      setServiceData(
-        Object.entries(serviceCount)
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 6)
-      );
+      const sc: Record<string, number> = {};
+      appointments.forEach(a => { sc[a.service] = (sc[a.service] || 0) + 1; });
+      setServiceData(Object.entries(sc).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 6));
 
-      // Patient growth - unique patients per month
-      const patientsByMonth: Record<string, Set<string>> = {};
-      appointments?.forEach(a => {
-        const monthKey = format(new Date(a.created_at), 'yyyy-MM');
-        if (!patientsByMonth[monthKey]) {
-          patientsByMonth[monthKey] = new Set();
-        }
-        patientsByMonth[monthKey].add(a.patient_email);
-      });
-
-      const growth: { month: string; patients: number }[] = [];
-      for (let i = 5; i >= 0; i--) {
-        const monthDate = subMonths(now, i);
-        const monthKey = format(monthDate, 'yyyy-MM');
-        growth.push({
-          month: format(monthDate, 'MMM', { locale: ar }),
-          patients: patientsByMonth[monthKey]?.size || 0,
-        });
-      }
+      const pm: Record<string, Set<string>> = {};
+      appointments.forEach(a => { const mk = format(new Date(a.created_at), 'yyyy-MM'); if (!pm[mk]) pm[mk] = new Set(); pm[mk].add(a.patient_email); });
+      const growth: any[] = [];
+      for (let i = 5; i >= 0; i--) { const md = subMonths(now, i); growth.push({ month: format(md, 'MMM', { locale: ar }), patients: pm[format(md, 'yyyy-MM')]?.size || 0 }); }
       setPatientGrowth(growth);
+
+      // Doctor performance
+      const doctorMap: Record<string, { name: string; appointments: number; completed: number; revenue: number }> = {};
+      appointments.forEach(a => {
+        if (!a.doctor_id) return;
+        if (!doctorMap[a.doctor_id]) {
+          const profile = profiles.find(p => p.user_id === a.doctor_id);
+          doctorMap[a.doctor_id] = { name: profile?.full_name || 'طبيب', appointments: 0, completed: 0, revenue: 0 };
+        }
+        doctorMap[a.doctor_id].appointments++;
+        if (a.status === 'completed') doctorMap[a.doctor_id].completed++;
+      });
+      Object.keys(doctorMap).forEach(did => {
+        const doctorPatients = appointments.filter(a => a.doctor_id === did && a.status === 'completed').map(a => a.patient_email);
+        const doctorInvoices = invoices.filter(i => doctorPatients.includes(i.patient_email));
+        doctorMap[did].revenue = doctorInvoices.reduce((s, i) => s + (i.amount_paid || 0), 0);
+      });
+      setDoctorPerformance(Object.values(doctorMap).sort((a, b) => b.completed - a.completed));
 
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      toast({
-        title: t.common.error,
-        description: 'فشل في تحميل التحليلات',
-        variant: 'destructive',
-      });
+      toast({ title: t.common.error, description: 'فشل في تحميل التحليلات', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  const tooltipStyle = { backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' };
 
   return (
     <div className="space-y-6">
@@ -191,16 +125,27 @@ const OwnerAnalytics = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">إجمالي الإيرادات</p>
-                <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">إجمالي الإيرادات المحصّلة</p>
+                <p className="text-2xl font-bold">{totalRevenue.toLocaleString()} ر.س</p>
                 <div className={`flex items-center text-sm ${revenueChange >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                   {revenueChange >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
                   {Math.abs(revenueChange)}% عن الشهر الماضي
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-green-600" />
+              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center"><DollarSign className="h-6 w-6 text-green-600" /></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/50 backdrop-blur border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">مبالغ مستحقة</p>
+                <p className="text-2xl font-bold text-destructive">{invoiceStats.totalDue.toLocaleString()} ر.س</p>
+                <p className="text-sm text-muted-foreground">{invoiceStats.totalInvoices} فاتورة</p>
               </div>
+              <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center"><DollarSign className="h-6 w-6 text-destructive" /></div>
             </div>
           </CardContent>
         </Card>
@@ -216,9 +161,7 @@ const OwnerAnalytics = () => {
                   {Math.abs(appointmentChange)}% عن الشهر الماضي
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-primary" />
-              </div>
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"><Calendar className="h-6 w-6 text-primary" /></div>
             </div>
           </CardContent>
         </Card>
@@ -227,83 +170,22 @@ const OwnerAnalytics = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">المواعيد المكتملة</p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
-                <p className="text-sm text-muted-foreground">
-                  {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}% نسبة الإكمال
-                </p>
+                <p className="text-sm text-muted-foreground">نسبة الإكمال</p>
+                <p className="text-2xl font-bold">{stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%</p>
+                <p className="text-sm text-muted-foreground">{stats.completed} مكتمل من {stats.total}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-accent" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/50 backdrop-blur border-border/50">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">المرضى الفريدون</p>
-                <p className="text-2xl font-bold">{patientGrowth.reduce((sum, p) => sum + p.patients, 0)}</p>
-                <p className="text-sm text-muted-foreground">آخر 6 أشهر</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
-                <Users className="h-6 w-6 text-muted-foreground" />
-              </div>
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center"><TrendingUp className="h-6 w-6 text-accent" /></div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Row 1 */}
+      {/* Revenue & Appointments Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Trend */}
         <Card className="bg-card/50 backdrop-blur border-border/50">
           <CardHeader>
-            <CardTitle>اتجاه الإيرادات</CardTitle>
-            <CardDescription>الإيرادات الشهرية خلال الأشهر الستة الماضية</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyData}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'الإيرادات']}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="hsl(var(--primary))" 
-                    fillOpacity={1} 
-                    fill="url(#colorRevenue)" 
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Appointments Trend */}
-        <Card className="bg-card/50 backdrop-blur border-border/50">
-          <CardHeader>
-            <CardTitle>اتجاه المواعيد</CardTitle>
-            <CardDescription>عدد المواعيد الشهرية</CardDescription>
+            <CardTitle>اتجاه الإيرادات الشهرية</CardTitle>
+            <CardDescription>المبالغ المحصّلة vs المفوترة</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -312,25 +194,88 @@ const OwnerAnalytics = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value: number) => [value, 'المواعيد']}
-                  />
-                  <Bar dataKey="appointments" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${value.toLocaleString()} ر.س`, name === 'revenue' ? 'محصّل' : 'مفوتر']} />
+                  <Legend formatter={(value) => value === 'revenue' ? 'محصّل' : 'مفوتر'} />
+                  <Bar dataKey="invoiced" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} opacity={0.3} />
+                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/50 backdrop-blur border-border/50">
+          <CardHeader>
+            <CardTitle>اتجاه المواعيد</CardTitle>
+            <CardDescription>عدد المواعيد الشهرية</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyData}>
+                  <defs>
+                    <linearGradient id="colorAppts" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [value, 'المواعيد']} />
+                  <Area type="monotone" dataKey="appointments" stroke="hsl(var(--accent))" fillOpacity={1} fill="url(#colorAppts)" strokeWidth={2} />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Row 2 */}
+      {/* Doctor Performance & Service Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Service Distribution */}
+        <Card className="bg-card/50 backdrop-blur border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 text-primary" />
+              أداء الأطباء
+            </CardTitle>
+            <CardDescription>مقارنة أداء الأطباء حسب المواعيد والإيرادات</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {doctorPerformance.length > 0 ? (
+              <div className="space-y-4">
+                {doctorPerformance.map((doc, i) => (
+                  <div key={i} className="bg-muted/50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold">{doc.name}</span>
+                      <span className="text-sm text-primary font-bold">{doc.revenue.toLocaleString()} ر.س</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div className="text-center">
+                        <p className="text-muted-foreground">المواعيد</p>
+                        <p className="font-bold">{doc.appointments}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-muted-foreground">المكتملة</p>
+                        <p className="font-bold text-green-600">{doc.completed}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-muted-foreground">نسبة الإكمال</p>
+                        <p className="font-bold">{doc.appointments > 0 ? Math.round((doc.completed / doc.appointments) * 100) : 0}%</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${doc.appointments > 0 ? (doc.completed / doc.appointments) * 100 : 0}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">لا توجد بيانات أطباء بعد</p>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="bg-card/50 backdrop-blur border-border/50">
           <CardHeader>
             <CardTitle>توزيع الخدمات</CardTitle>
@@ -340,74 +285,47 @@ const OwnerAnalytics = () => {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={serviceData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {serviceData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                  <Pie data={serviceData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
+                    {serviceData.map((_, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
+                  <Tooltip contentStyle={tooltipStyle} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
-
-        {/* Patient Growth */}
-        <Card className="bg-card/50 backdrop-blur border-border/50">
-          <CardHeader>
-            <CardTitle>نمو المرضى</CardTitle>
-            <CardDescription>عدد المرضى الجدد شهرياً</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={patientGrowth}>
-                  <defs>
-                    <linearGradient id="colorPatients" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value: number) => [value, 'المرضى']}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="patients" 
-                    stroke="#10b981" 
-                    fillOpacity={1} 
-                    fill="url(#colorPatients)" 
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Patient Growth */}
+      <Card className="bg-card/50 backdrop-blur border-border/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            نمو المرضى
+          </CardTitle>
+          <CardDescription>عدد المرضى الفريدون شهرياً</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={patientGrowth}>
+                <defs>
+                  <linearGradient id="colorPatients" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [value, 'المرضى']} />
+                <Area type="monotone" dataKey="patients" stroke="#10b981" fillOpacity={1} fill="url(#colorPatients)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
