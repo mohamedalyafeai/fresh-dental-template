@@ -453,6 +453,48 @@ export type Database = {
           },
         ]
       }
+      medical_records: {
+        Row: {
+          blood_type: string | null
+          chronic_diseases: string | null
+          created_at: string
+          created_by: string | null
+          family_history: string | null
+          id: string
+          notes: string | null
+          patient_email: string
+          patient_name: string
+          surgical_history: string | null
+          updated_at: string
+        }
+        Insert: {
+          blood_type?: string | null
+          chronic_diseases?: string | null
+          created_at?: string
+          created_by?: string | null
+          family_history?: string | null
+          id?: string
+          notes?: string | null
+          patient_email: string
+          patient_name: string
+          surgical_history?: string | null
+          updated_at?: string
+        }
+        Update: {
+          blood_type?: string | null
+          chronic_diseases?: string | null
+          created_at?: string
+          created_by?: string | null
+          family_history?: string | null
+          id?: string
+          notes?: string | null
+          patient_email?: string
+          patient_name?: string
+          surgical_history?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           appointment_reminders: boolean
@@ -477,6 +519,78 @@ export type Database = {
           promotional_emails?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      patient_allergies: {
+        Row: {
+          allergy_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          patient_email: string
+          severity: string
+        }
+        Insert: {
+          allergy_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_email: string
+          severity?: string
+        }
+        Update: {
+          allergy_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_email?: string
+          severity?: string
+        }
+        Relationships: []
+      }
+      patient_medications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dosage: string | null
+          end_date: string | null
+          frequency: string | null
+          id: string
+          is_current: boolean
+          medication_name: string
+          notes: string | null
+          patient_email: string
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dosage?: string | null
+          end_date?: string | null
+          frequency?: string | null
+          id?: string
+          is_current?: boolean
+          medication_name: string
+          notes?: string | null
+          patient_email: string
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dosage?: string | null
+          end_date?: string | null
+          frequency?: string | null
+          id?: string
+          is_current?: boolean
+          medication_name?: string
+          notes?: string | null
+          patient_email?: string
+          start_date?: string | null
         }
         Relationships: []
       }
