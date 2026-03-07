@@ -14,9 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell } from 'lucide-react';
+import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DoctorApplicationForm from '@/components/DoctorApplicationForm';
+import BookingModal from '@/components/BookingModal';
 import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
 import { PatientTreatmentPlans } from '@/components/portal/PatientTreatmentPlans';
 import { PatientInvoices } from '@/components/portal/PatientInvoices';
@@ -78,6 +79,9 @@ const PatientPortal = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  // Booking modal state
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
  
    // Doctor filter state
    const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
@@ -324,10 +328,16 @@ const PatientPortal = () => {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-            {t.portal.signOut}
-          </Button>
+          <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <Button variant="hero" size="sm" onClick={() => setBookingModalOpen(true)}>
+              <Plus className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+              حجز موعد
+            </Button>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+              {t.portal.signOut}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -370,7 +380,8 @@ const PatientPortal = () => {
               <CalendarIcon2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h2 className="text-xl font-semibold mb-2">{t.portal.noAppointmentsTitle}</h2>
               <p className="text-muted-foreground mb-6">{t.portal.noAppointmentsDesc}</p>
-              <Button variant="hero" onClick={() => navigate('/')}>
+              <Button variant="hero" onClick={() => setBookingModalOpen(true)}>
+                <Plus className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                 {t.portal.bookNow}
               </Button>
             </CardContent>
@@ -629,6 +640,15 @@ const PatientPortal = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Booking Modal */}
+      <BookingModal 
+        isOpen={bookingModalOpen} 
+        onClose={() => {
+          setBookingModalOpen(false);
+          fetchAppointments();
+        }} 
+      />
     </div>
   );
 };
