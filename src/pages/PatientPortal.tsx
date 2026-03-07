@@ -347,10 +347,14 @@ const PatientPortal = () => {
         <PatientDashboard userEmail={user.email || ''} />
 
         <Tabs defaultValue="appointments" dir={isRTL ? 'rtl' : 'ltr'}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="appointments" className="flex items-center gap-1.5">
               <CalendarIcon2 className="h-4 w-4" />
               <span className="hidden sm:inline">المواعيد</span>
+            </TabsTrigger>
+            <TabsTrigger value="medical" className="flex items-center gap-1.5">
+              <Heart className="h-4 w-4" />
+              <span className="hidden sm:inline">السجل الطبي</span>
             </TabsTrigger>
             <TabsTrigger value="treatments" className="flex items-center gap-1.5">
               <ClipboardList className="h-4 w-4" />
