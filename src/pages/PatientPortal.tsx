@@ -541,6 +541,10 @@ const PatientPortal = () => {
         )}
           </TabsContent>
 
+          <TabsContent value="medical">
+            {user?.email && <PatientMedicalRecords userEmail={user.email} />}
+          </TabsContent>
+
           <TabsContent value="treatments">
             {user?.email && <PatientTreatmentPlans userEmail={user.email} />}
           </TabsContent>
