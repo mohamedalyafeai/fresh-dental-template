@@ -380,7 +380,8 @@ const PatientPortal = () => {
               <CalendarIcon2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h2 className="text-xl font-semibold mb-2">{t.portal.noAppointmentsTitle}</h2>
               <p className="text-muted-foreground mb-6">{t.portal.noAppointmentsDesc}</p>
-              <Button variant="hero" onClick={() => navigate('/')}>
+              <Button variant="hero" onClick={() => setBookingModalOpen(true)}>
+                <Plus className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                 {t.portal.bookNow}
               </Button>
             </CardContent>
@@ -639,6 +640,15 @@ const PatientPortal = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Booking Modal */}
+      <BookingModal 
+        isOpen={bookingModalOpen} 
+        onClose={() => {
+          setBookingModalOpen(false);
+          fetchAppointments();
+        }} 
+      />
     </div>
   );
 };
