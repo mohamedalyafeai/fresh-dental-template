@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import OwnerAnalytics from '@/components/OwnerAnalytics';
 import ClinicSettings from '@/components/ClinicSettings';
+import MedicalRecordsManager from '@/components/admin/MedicalRecordsManager';
 import { patientNoteSchema } from '@/lib/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1222,6 +1223,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="analytics" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
               <BarChart3 className="h-4 w-4 ml-2" />
               التحليلات
+            </TabsTrigger>
+            <TabsTrigger value="medical-records" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <Heart className="h-4 w-4 ml-2" />
+              السجلات الطبية
             </TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
               <Settings className="h-4 w-4 ml-2" />
