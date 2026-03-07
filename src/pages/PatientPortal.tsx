@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell, Plus } from 'lucide-react';
+import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell, Plus, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DoctorApplicationForm from '@/components/DoctorApplicationForm';
 import BookingModal from '@/components/BookingModal';
@@ -24,6 +24,7 @@ import { PatientInvoices } from '@/components/portal/PatientInvoices';
 import { PatientPrescriptions } from '@/components/portal/PatientPrescriptions';
 import { PatientDashboard } from '@/components/portal/PatientDashboard';
 import { PatientNotifications } from '@/components/portal/PatientNotifications';
+import { PatientMedicalRecords } from '@/components/portal/PatientMedicalRecords';
  
  interface DoctorInfo {
    id: string;
@@ -346,10 +347,14 @@ const PatientPortal = () => {
         <PatientDashboard userEmail={user.email || ''} />
 
         <Tabs defaultValue="appointments" dir={isRTL ? 'rtl' : 'ltr'}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="appointments" className="flex items-center gap-1.5">
               <CalendarIcon2 className="h-4 w-4" />
               <span className="hidden sm:inline">المواعيد</span>
+            </TabsTrigger>
+            <TabsTrigger value="medical" className="flex items-center gap-1.5">
+              <Heart className="h-4 w-4" />
+              <span className="hidden sm:inline">السجل الطبي</span>
             </TabsTrigger>
             <TabsTrigger value="treatments" className="flex items-center gap-1.5">
               <ClipboardList className="h-4 w-4" />
@@ -534,6 +539,10 @@ const PatientPortal = () => {
             </div>
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="medical">
+            {user?.email && <PatientMedicalRecords userEmail={user.email} />}
           </TabsContent>
 
           <TabsContent value="treatments">
