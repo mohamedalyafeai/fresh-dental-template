@@ -328,10 +328,16 @@ const PatientPortal = () => {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-            {t.portal.signOut}
-          </Button>
+          <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <Button variant="hero" size="sm" onClick={() => setBookingModalOpen(true)}>
+              <Plus className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+              حجز موعد
+            </Button>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+              {t.portal.signOut}
+            </Button>
+          </div>
         </div>
       </header>
 
