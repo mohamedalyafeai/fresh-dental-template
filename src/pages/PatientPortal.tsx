@@ -14,9 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell } from 'lucide-react';
+import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DoctorApplicationForm from '@/components/DoctorApplicationForm';
+import BookingModal from '@/components/BookingModal';
 import { DoctorNameDisplay } from '@/components/DoctorNameDisplay';
 import { PatientTreatmentPlans } from '@/components/portal/PatientTreatmentPlans';
 import { PatientInvoices } from '@/components/portal/PatientInvoices';
@@ -78,6 +79,9 @@ const PatientPortal = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  // Booking modal state
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
  
    // Doctor filter state
    const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
