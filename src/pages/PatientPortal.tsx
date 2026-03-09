@@ -572,6 +572,18 @@ const PatientPortal = () => {
             {user?.email && <PatientPrescriptions userEmail={user.email} />}
           </TabsContent>
 
+          <TabsContent value="xrays">
+            {user?.email && <PatientXrays userEmail={user.email} />}
+          </TabsContent>
+
+          <TabsContent value="chat">
+            {user?.email && <PatientChat userEmail={user.email} userName={user.user_metadata?.full_name} />}
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            {user?.email && <PatientReviews userEmail={user.email} userName={user.user_metadata?.full_name} />}
+          </TabsContent>
+
           <TabsContent value="notifications">
             {user?.email && <PatientNotifications userEmail={user.email} />}
           </TabsContent>
