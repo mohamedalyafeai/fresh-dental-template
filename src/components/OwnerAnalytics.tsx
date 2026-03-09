@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, TrendingUp, Users, Calendar, DollarSign, ArrowUpRight, ArrowDownRight, Stethoscope } from 'lucide-react';
+import { Loader2, TrendingUp, Users, Calendar, DollarSign, ArrowUpRight, ArrowDownRight, Stethoscope, Download, FileSpreadsheet } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { t } from '@/lib/translations';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -117,8 +121,100 @@ const OwnerAnalytics = () => {
 
   const tooltipStyle = { backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFont('helvetica');
+    doc.setFontSize(18);
+    doc.text('Clinic Analytics Report', 14, 22);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`, 14, 30);
+
+    // Summary stats
+    autoTable(doc, {
+      startY: 40,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Revenue', `${totalRevenue.toLocaleString()} SAR`],
+        ['Total Due', `${invoiceStats.totalDue.toLocaleString()} SAR`],
+        ['Total Appointments', stats.total.toString()],
+        ['Completed', stats.completed.toString()],
+        ['Completion Rate', `${stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%`],
+      ],
+    });
+
+    // Doctor Performance
+    if (doctorPerformance.length > 0) {
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 10,
+        head: [['Doctor', 'Appointments', 'Completed', 'Revenue (SAR)']],
+        body: doctorPerformance.map(d => [d.name, d.appointments, d.completed, d.revenue.toLocaleString()]),
+      });
+    }
+
+    doc.save('clinic-analytics-report.pdf');
+    toast({ title: 'تم التصدير', description: 'تم تحميل التقرير بصيغة PDF' });
+  };
+
+  const exportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Summary sheet
+    const summaryData = [
+      ['Metric', 'Value'],
+      ['Total Revenue', totalRevenue],
+      ['Total Due', invoiceStats.totalDue],
+      ['Total Appointments', stats.total],
+      ['Completed', stats.completed],
+      ['Cancelled', stats.cancelled],
+      ['Pending', stats.pending],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'Summary');
+
+    // Monthly data
+    if (monthlyData.length > 0) {
+      const monthlySheet = XLSX.utils.json_to_sheet(monthlyData.map(m => ({
+        Month: m.month,
+        Appointments: m.appointments,
+        Revenue: m.revenue,
+        Invoiced: m.invoiced,
+      })));
+      XLSX.utils.book_append_sheet(wb, monthlySheet, 'Monthly');
+    }
+
+    // Doctor performance
+    if (doctorPerformance.length > 0) {
+      const docSheet = XLSX.utils.json_to_sheet(doctorPerformance.map(d => ({
+        Doctor: d.name,
+        Appointments: d.appointments,
+        Completed: d.completed,
+        Revenue: d.revenue,
+      })));
+      XLSX.utils.book_append_sheet(wb, docSheet, 'Doctors');
+    }
+
+    // Services
+    if (serviceData.length > 0) {
+      const svcSheet = XLSX.utils.json_to_sheet(serviceData.map(s => ({ Service: s.name, Count: s.value })));
+      XLSX.utils.book_append_sheet(wb, svcSheet, 'Services');
+    }
+
+    XLSX.writeFile(wb, 'clinic-analytics-report.xlsx');
+    toast({ title: 'تم التصدير', description: 'تم تحميل التقرير بصيغة Excel' });
+  };
+
   return (
     <div className="space-y-6">
+      {/* Export Buttons */}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={exportToPDF} className="gap-2">
+          <Download className="h-4 w-4" />
+          تصدير PDF
+        </Button>
+        <Button variant="outline" onClick={exportToExcel} className="gap-2">
+          <FileSpreadsheet className="h-4 w-4" />
+          تصدير Excel
+        </Button>
+      </div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-card/50 backdrop-blur border-border/50">
