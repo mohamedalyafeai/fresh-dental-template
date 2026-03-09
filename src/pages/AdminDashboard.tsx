@@ -1232,6 +1232,18 @@ const AdminDashboard = () => {
               <Heart className="h-4 w-4 ml-2" />
               السجلات الطبية
             </TabsTrigger>
+            <TabsTrigger value="inventory" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <Package className="h-4 w-4 ml-2" />
+              المخزون
+            </TabsTrigger>
+            <TabsTrigger value="xrays" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <Eye className="h-4 w-4 ml-2" />
+              الأشعة
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <MessageSquare className="h-4 w-4 ml-2" />
+              الدردشة
+            </TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
               <Settings className="h-4 w-4 ml-2" />
               الإعدادات
