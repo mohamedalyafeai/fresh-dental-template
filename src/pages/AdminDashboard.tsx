@@ -63,7 +63,8 @@ import {
   FileDown,
   User,
   Stethoscope,
-  Heart
+  Heart,
+  Package
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import PrintablePatientReport from '@/components/PrintablePatientReport';
