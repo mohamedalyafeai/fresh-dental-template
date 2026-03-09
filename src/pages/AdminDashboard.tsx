@@ -1701,6 +1701,21 @@ const AdminDashboard = () => {
             <MedicalRecordsManager />
           </TabsContent>
 
+          {/* Inventory Tab */}
+          <TabsContent value="inventory" className="space-y-6">
+            <InventoryManager />
+          </TabsContent>
+
+          {/* X-Ray Tab */}
+          <TabsContent value="xrays" className="space-y-6">
+            <XrayManager />
+          </TabsContent>
+
+          {/* Chat Tab */}
+          <TabsContent value="chat" className="space-y-6">
+            <AdminChat />
+          </TabsContent>
+
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
             {/* Owner Analytics - Only for owners */}
