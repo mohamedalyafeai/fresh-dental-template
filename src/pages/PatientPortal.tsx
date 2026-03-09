@@ -350,7 +350,7 @@ const PatientPortal = () => {
         <PatientDashboard userEmail={user.email || ''} />
 
         <Tabs defaultValue="appointments" dir={isRTL ? 'rtl' : 'ltr'}>
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="appointments" className="flex items-center gap-1.5">
               <CalendarIcon2 className="h-4 w-4" />
               <span className="hidden sm:inline">المواعيد</span>
@@ -358,6 +358,10 @@ const PatientPortal = () => {
             <TabsTrigger value="medical" className="flex items-center gap-1.5">
               <Heart className="h-4 w-4" />
               <span className="hidden sm:inline">السجل الطبي</span>
+            </TabsTrigger>
+            <TabsTrigger value="xrays" className="flex items-center gap-1.5">
+              <Image className="h-4 w-4" />
+              <span className="hidden sm:inline">الأشعة</span>
             </TabsTrigger>
             <TabsTrigger value="treatments" className="flex items-center gap-1.5">
               <ClipboardList className="h-4 w-4" />
@@ -370,6 +374,14 @@ const PatientPortal = () => {
             <TabsTrigger value="prescriptions" className="flex items-center gap-1.5">
               <Pill className="h-4 w-4" />
               <span className="hidden sm:inline">الوصفات</span>
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-1.5">
+              <MessageCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">الدردشة</span>
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="flex items-center gap-1.5">
+              <Star className="h-4 w-4" />
+              <span className="hidden sm:inline">التقييمات</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-1.5">
               <Bell className="h-4 w-4" />
