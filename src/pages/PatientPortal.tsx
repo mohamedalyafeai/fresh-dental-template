@@ -25,6 +25,9 @@ import { PatientPrescriptions } from '@/components/portal/PatientPrescriptions';
 import { PatientDashboard } from '@/components/portal/PatientDashboard';
 import { PatientNotifications } from '@/components/portal/PatientNotifications';
 import { PatientMedicalRecords } from '@/components/portal/PatientMedicalRecords';
+import { PatientChat } from '@/components/portal/PatientChat';
+import { PatientReviews } from '@/components/portal/PatientReviews';
+import { PatientXrays } from '@/components/portal/PatientXrays';
  
  interface DoctorInfo {
    id: string;
