@@ -5,6 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import OwnerAnalytics from '@/components/OwnerAnalytics';
 import ClinicSettings from '@/components/ClinicSettings';
 import MedicalRecordsManager from '@/components/admin/MedicalRecordsManager';
+import InventoryManager from '@/components/admin/InventoryManager';
+import XrayManager from '@/components/admin/XrayManager';
+import AdminChat from '@/components/admin/AdminChat';
 import { patientNoteSchema } from '@/lib/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,7 +63,8 @@ import {
   FileDown,
   User,
   Stethoscope,
-  Heart
+  Heart,
+  Package
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import PrintablePatientReport from '@/components/PrintablePatientReport';
@@ -1229,6 +1233,18 @@ const AdminDashboard = () => {
               <Heart className="h-4 w-4 ml-2" />
               السجلات الطبية
             </TabsTrigger>
+            <TabsTrigger value="inventory" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <Package className="h-4 w-4 ml-2" />
+              المخزون
+            </TabsTrigger>
+            <TabsTrigger value="xrays" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <Eye className="h-4 w-4 ml-2" />
+              الأشعة
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
+              <MessageSquare className="h-4 w-4 ml-2" />
+              الدردشة
+            </TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">
               <Settings className="h-4 w-4 ml-2" />
               الإعدادات
@@ -1684,6 +1700,21 @@ const AdminDashboard = () => {
           {/* Medical Records Tab */}
           <TabsContent value="medical-records" className="space-y-6">
             <MedicalRecordsManager />
+          </TabsContent>
+
+          {/* Inventory Tab */}
+          <TabsContent value="inventory" className="space-y-6">
+            <InventoryManager />
+          </TabsContent>
+
+          {/* X-Ray Tab */}
+          <TabsContent value="xrays" className="space-y-6">
+            <XrayManager />
+          </TabsContent>
+
+          {/* Chat Tab */}
+          <TabsContent value="chat" className="space-y-6">
+            <AdminChat />
           </TabsContent>
 
           {/* Settings Tab */}

@@ -422,6 +422,59 @@ const OwnerAnalytics = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Financial Comparison - Monthly vs Previous */}
+      <Card className="bg-card/50 backdrop-blur border-border/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            مقارنة الإيرادات الشهرية
+          </CardTitle>
+          <CardDescription>مقارنة المبالغ المحصّلة والمفوترة شهرياً</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${value.toLocaleString()} ر.س`, name === 'revenue' ? 'محصّل' : name === 'invoiced' ? 'مفوتر' : name]} />
+                <Legend formatter={(value) => value === 'revenue' ? 'محصّل' : value === 'invoiced' ? 'مفوتر' : value === 'appointments' ? 'مواعيد' : value} />
+                <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="revenue" />
+                <Bar dataKey="invoiced" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name="invoiced" opacity={0.6} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Summary comparison */}
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {monthlyData.length >= 2 && (() => {
+              const current = monthlyData[monthlyData.length - 1];
+              const previous = monthlyData[monthlyData.length - 2];
+              const revenueGrowth = previous.revenue > 0 ? Math.round(((current.revenue - previous.revenue) / previous.revenue) * 100) : 0;
+              const appointmentGrowth = previous.appointments > 0 ? Math.round(((current.appointments - previous.appointments) / previous.appointments) * 100) : 0;
+              return (
+                <>
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm text-muted-foreground">إيرادات الشهر الحالي</p>
+                    <p className="text-xl font-bold">{current.revenue.toLocaleString()} ر.س</p>
+                    <p className={`text-sm ${revenueGrowth >= 0 ? 'text-green-600' : 'text-destructive'}`}>{revenueGrowth >= 0 ? '+' : ''}{revenueGrowth}%</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm text-muted-foreground">إيرادات الشهر السابق</p>
+                    <p className="text-xl font-bold">{previous.revenue.toLocaleString()} ر.س</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm text-muted-foreground">نمو المواعيد</p>
+                    <p className="text-xl font-bold">{current.appointments}</p>
+                    <p className={`text-sm ${appointmentGrowth >= 0 ? 'text-green-600' : 'text-destructive'}`}>{appointmentGrowth >= 0 ? '+' : ''}{appointmentGrowth}%</p>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

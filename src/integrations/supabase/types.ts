@@ -89,6 +89,39 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          patient_email: string
+          sender_id: string
+          sender_name: string
+          sender_role: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          patient_email: string
+          sender_id: string
+          sender_name: string
+          sender_role?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          patient_email?: string
+          sender_id?: string
+          sender_name?: string
+          sender_role?: string
+        }
+        Relationships: []
+      }
       clinic_settings: {
         Row: {
           address: string | null
@@ -346,6 +379,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventory_items: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          item_name: string
+          min_quantity: number
+          notes: string | null
+          quantity: number
+          supplier: string | null
+          unit: string
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_name: string
+          min_quantity?: number
+          notes?: string | null
+          quantity?: number
+          supplier?: string | null
+          unit?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_name?: string
+          min_quantity?: number
+          notes?: string | null
+          quantity?: number
+          supplier?: string | null
+          unit?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       invoice_items: {
         Row: {
@@ -656,6 +734,50 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      patient_reviews: {
+        Row: {
+          appointment_id: string | null
+          comment: string | null
+          created_at: string
+          doctor_id: string | null
+          id: string
+          is_visible: boolean | null
+          patient_email: string
+          patient_name: string
+          rating: number
+        }
+        Insert: {
+          appointment_id?: string | null
+          comment?: string | null
+          created_at?: string
+          doctor_id?: string | null
+          id?: string
+          is_visible?: boolean | null
+          patient_email: string
+          patient_name: string
+          rating: number
+        }
+        Update: {
+          appointment_id?: string | null
+          comment?: string | null
+          created_at?: string
+          doctor_id?: string | null
+          id?: string
+          is_visible?: boolean | null
+          patient_email?: string
+          patient_name?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_reviews_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prescription_items: {
         Row: {
@@ -987,6 +1109,42 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      xray_images: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          patient_email: string
+          patient_name: string
+          taken_date: string | null
+          tooth_number: number | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          patient_email: string
+          patient_name: string
+          taken_date?: string | null
+          tooth_number?: number | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          patient_email?: string
+          patient_name?: string
+          taken_date?: string | null
+          tooth_number?: number | null
+          uploaded_by?: string | null
         }
         Relationships: []
       }

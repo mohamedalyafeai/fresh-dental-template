@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell, Plus, Heart } from 'lucide-react';
+import { Loader2, CalendarIcon, Clock, ArrowLeft, Smile, LogOut, Calendar as CalendarIcon2, Edit, XCircle, AlertCircle, Stethoscope, ClipboardList, Receipt, Pill, Bell, Plus, Heart, MessageCircle, Star, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DoctorApplicationForm from '@/components/DoctorApplicationForm';
 import BookingModal from '@/components/BookingModal';
@@ -25,6 +25,9 @@ import { PatientPrescriptions } from '@/components/portal/PatientPrescriptions';
 import { PatientDashboard } from '@/components/portal/PatientDashboard';
 import { PatientNotifications } from '@/components/portal/PatientNotifications';
 import { PatientMedicalRecords } from '@/components/portal/PatientMedicalRecords';
+import { PatientChat } from '@/components/portal/PatientChat';
+import { PatientReviews } from '@/components/portal/PatientReviews';
+import { PatientXrays } from '@/components/portal/PatientXrays';
  
  interface DoctorInfo {
    id: string;
@@ -347,7 +350,7 @@ const PatientPortal = () => {
         <PatientDashboard userEmail={user.email || ''} />
 
         <Tabs defaultValue="appointments" dir={isRTL ? 'rtl' : 'ltr'}>
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="appointments" className="flex items-center gap-1.5">
               <CalendarIcon2 className="h-4 w-4" />
               <span className="hidden sm:inline">المواعيد</span>
@@ -355,6 +358,10 @@ const PatientPortal = () => {
             <TabsTrigger value="medical" className="flex items-center gap-1.5">
               <Heart className="h-4 w-4" />
               <span className="hidden sm:inline">السجل الطبي</span>
+            </TabsTrigger>
+            <TabsTrigger value="xrays" className="flex items-center gap-1.5">
+              <Image className="h-4 w-4" />
+              <span className="hidden sm:inline">الأشعة</span>
             </TabsTrigger>
             <TabsTrigger value="treatments" className="flex items-center gap-1.5">
               <ClipboardList className="h-4 w-4" />
@@ -367,6 +374,14 @@ const PatientPortal = () => {
             <TabsTrigger value="prescriptions" className="flex items-center gap-1.5">
               <Pill className="h-4 w-4" />
               <span className="hidden sm:inline">الوصفات</span>
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-1.5">
+              <MessageCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">الدردشة</span>
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="flex items-center gap-1.5">
+              <Star className="h-4 w-4" />
+              <span className="hidden sm:inline">التقييمات</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-1.5">
               <Bell className="h-4 w-4" />
@@ -555,6 +570,18 @@ const PatientPortal = () => {
 
           <TabsContent value="prescriptions">
             {user?.email && <PatientPrescriptions userEmail={user.email} />}
+          </TabsContent>
+
+          <TabsContent value="xrays">
+            {user?.email && <PatientXrays userEmail={user.email} />}
+          </TabsContent>
+
+          <TabsContent value="chat">
+            {user?.email && <PatientChat userEmail={user.email} userName={user.user_metadata?.full_name} />}
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            {user?.email && <PatientReviews userEmail={user.email} userName={user.user_metadata?.full_name} />}
           </TabsContent>
 
           <TabsContent value="notifications">
