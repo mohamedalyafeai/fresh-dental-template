@@ -40,22 +40,24 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/staff" element={<StaffManagement />} />
-              <Route path="/admin/profile" element={<DoctorProfile />} />
-              <Route path="/admin/schedule" element={<DoctorSchedule />} />
-              <Route path="/admin/dental-chart" element={<DentalChartPage />} />
-              <Route path="/admin/treatment-plans" element={<TreatmentPlansPage />} />
-              <Route path="/admin/invoices" element={<InvoicesPage />} />
-              <Route path="/admin/prescriptions" element={<PrescriptionsPage />} />
-              <Route path="/portal" element={<PatientPortal />} />
-              <Route path="/settings" element={<Settings />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/staff" element={<StaffManagement />} />
+                <Route path="/admin/profile" element={<DoctorProfile />} />
+                <Route path="/admin/schedule" element={<DoctorSchedule />} />
+                <Route path="/admin/dental-chart" element={<DentalChartPage />} />
+                <Route path="/admin/treatment-plans" element={<TreatmentPlansPage />} />
+                <Route path="/admin/invoices" element={<InvoicesPage />} />
+                <Route path="/admin/prescriptions" element={<PrescriptionsPage />} />
+                <Route path="/portal" element={<PatientPortal />} />
+                <Route path="/settings" element={<Settings />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>
