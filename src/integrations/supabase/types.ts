@@ -50,6 +50,7 @@ export type Database = {
           appointment_time: string
           created_at: string
           doctor_id: string | null
+          hour_reminder_sent: boolean
           id: string
           notes: string | null
           patient_email: string
@@ -64,6 +65,7 @@ export type Database = {
           appointment_time: string
           created_at?: string
           doctor_id?: string | null
+          hour_reminder_sent?: boolean
           id?: string
           notes?: string | null
           patient_email: string
@@ -78,6 +80,7 @@ export type Database = {
           appointment_time?: string
           created_at?: string
           doctor_id?: string | null
+          hour_reminder_sent?: boolean
           id?: string
           notes?: string | null
           patient_email?: string
@@ -1048,6 +1051,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      treatment_reports: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          diagnosis: string | null
+          doctor_id: string
+          id: string
+          next_visit_date: string | null
+          patient_email: string
+          patient_name: string
+          recommendations: string | null
+          treatment_done: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          doctor_id: string
+          id?: string
+          next_visit_date?: string | null
+          patient_email: string
+          patient_name: string
+          recommendations?: string | null
+          treatment_done: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          doctor_id?: string
+          id?: string
+          next_visit_date?: string | null
+          patient_email?: string
+          patient_name?: string
+          recommendations?: string | null
+          treatment_done?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_reports_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
